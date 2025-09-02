@@ -17,7 +17,6 @@ import Membership from './pages/Membership';
 import NotFound from './pages/NotFound';
 import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
-import AdminHotkeyGate from '@/components/AdminHotkeyGate';
 import CoursePlayer from './pages/CoursePlayer';
 
 const queryClient = new QueryClient();
@@ -38,7 +37,6 @@ const App = () => {
         <Toaster />
         <BrowserRouter>
           <div className="min-h-screen flex flex-col">
-            <AdminHotkeyGate />
             <Navbar />
             <main className="flex-1">
               <Routes>
