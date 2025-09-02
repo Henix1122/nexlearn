@@ -134,7 +134,7 @@ export const mockUsers: User[] = [
   {
     id: 'admin-1',
     name: 'Admin User',
-    email: 'admin@nexlearn.com',
+  email: 'michaelboadiasareot@gmail.com',
     initials: 'AD',
     membershipType: 'Enterprise',
     enrolledCourses: [],
@@ -303,7 +303,7 @@ export const logout = (): void => {
 
 export const adminLogin = async (email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> => {
   await new Promise(r => setTimeout(r, 800));
-  if (email === 'admin@nexlearn.com' && password === 'admin123') {
+  if (email === 'michaelboadiasareot@gmail.com' && password === 'Mic@11221092') {
     const admin = mockUsers.find(u => u.role === 'admin')!;
     storeUser(admin);
     return { success: true, user: admin };
