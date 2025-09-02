@@ -18,6 +18,7 @@ import NotFound from './pages/NotFound';
 import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
 import CoursePlayer from './pages/CoursePlayer';
+import Settings from './pages/Settings';
 import AdminHotkeyListener from '@/components/AdminHotkeyListener';
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/membership" element={<Membership />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="*" element={<NotFound />} />

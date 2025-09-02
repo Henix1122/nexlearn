@@ -245,6 +245,15 @@ export const signup = async (name: string, email: string, password: string): Pro
         role: 'user'
       };
       storeUser(profile);
+      // Also persist local hashed credentials for offline login
+      try {
+        const users = loadLocalUsers();
+        if (!users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+          const pwHash = await hashPassword(password);
+          users.push({ id: profile.id, email: profile.email, name: profile.name, passwordHash: pwHash, createdAt: new Date().toISOString() });
+          saveLocalUsers(users);
+        }
+      } catch {}
   toastSuccess('Account created', 'Welcome to NexLearn!');
       return { success: true, user: profile };
     }
@@ -335,6 +344,8 @@ export const completeCourse = (courseId: string): void => {
   const user = getStoredUser();
   if (user && !user.completedCourses.includes(courseId)) {
     user.completedCourses.push(courseId);
+  // Award certificate if not already
+  if (!user.certificates.includes(courseId)) user.certificates.push(courseId);
     storeUser(user);
   }
 };
@@ -409,6 +420,7 @@ export const syncAutoCompletion = (courseId: string, totalModules: number): void
   const percent = getCourseModuleCompletionPercent(courseId, totalModules);
   if (percent === 100 && !user.completedCourses.includes(courseId)) {
     user.completedCourses.push(courseId);
+  if (!user.certificates.includes(courseId)) user.certificates.push(courseId);
     storeUser(user);
     try { window.dispatchEvent(new CustomEvent('auth:changed', { detail: { user } })); } catch {}
     (async () => {
