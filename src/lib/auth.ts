@@ -161,6 +161,56 @@ export const storeUser = (user: User): void => {
   } catch {}
 };
 
+// -------- Persistent profile (survives logout) --------
+// We keep a long-lived profile per user id so that logging out only removes the active session pointer
+// and does NOT erase historical enrollments, completions, certificates, etc.
+interface PersistedProfileShape {
+  enrolledCourses: string[];
+  completedCourses: string[];
+  certificates: string[];
+  ctfPoints: number;
+  learningPaths?: string[];
+  pathCertificates?: string[];
+}
+
+const persistedProfileKey = (userId: string) => `nex_user_profile_${userId}`;
+
+const loadPersistedProfile = (userId: string): PersistedProfileShape | null => {
+  try {
+    const raw = localStorage.getItem(persistedProfileKey(userId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
+const savePersistedProfile = (user: User) => {
+  try {
+    const shape: PersistedProfileShape = {
+      enrolledCourses: user.enrolledCourses || [],
+      completedCourses: user.completedCourses || [],
+      certificates: user.certificates || [],
+      ctfPoints: user.ctfPoints || 0,
+      learningPaths: user.learningPaths || [],
+      pathCertificates: user.pathCertificates || []
+    };
+    localStorage.setItem(persistedProfileKey(user.id), JSON.stringify(shape));
+  } catch {}
+};
+
+// Merge persisted data into a freshly created/loaded base user object
+const mergePersistedIntoUser = (base: User): User => {
+  const persisted = loadPersistedProfile(base.id);
+  if (!persisted) return base;
+  const uniq = (arr: string[]) => Array.from(new Set(arr));
+  base.enrolledCourses = uniq([...(persisted.enrolledCourses||[]), ...(base.enrolledCourses||[])]);
+  base.completedCourses = uniq([...(persisted.completedCourses||[]), ...(base.completedCourses||[])]);
+  base.certificates = uniq([...(persisted.certificates||[]), ...(base.certificates||[])]);
+  base.learningPaths = uniq([...(persisted.learningPaths||[]), ...(base.learningPaths||[])]);
+  base.pathCertificates = uniq([...(persisted.pathCertificates||[]), ...(base.pathCertificates||[])]);
+  // Retain max ctfPoints (avoid regression)
+  base.ctfPoints = Math.max(base.ctfPoints || 0, persisted.ctfPoints || 0);
+  return base;
+};
+
 export const removeUser = (): void => {
   localStorage.removeItem('nex_user');
   try {
@@ -174,7 +224,7 @@ export const login = async (email: string, password: string): Promise<{ success:
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
       // Hydrate or adapt to local User shape
-      const profile: User = getStoredUser() || {
+  const profile: User = mergePersistedIntoUser(getStoredUser() || {
         id: data.user.id,
         name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'User',
         email: data.user.email || email,
@@ -185,8 +235,9 @@ export const login = async (email: string, password: string): Promise<{ success:
         certificates: [],
         ctfPoints: 0,
         role: 'user'
-      };
+  });
       storeUser(profile);
+  savePersistedProfile(profile);
   toastSuccess('Signed in', 'Welcome back!');
       return { success: true, user: profile };
     }
@@ -196,10 +247,22 @@ export const login = async (email: string, password: string): Promise<{ success:
   // Mock fallback
   await new Promise(resolve => setTimeout(resolve, 300));
   if (email === 'demo@nexlearn.com' && password === 'demo123') {
-    const user = mockUsers[0];
+  const user = mergePersistedIntoUser(mockUsers[0]);
     storeUser(user);
+  savePersistedProfile(user);
   toastSuccess('Demo login', 'Signed in with demo account.');
     return { success: true, user };
+  }
+  // Admin credential fallback via standard login (monitor only)
+  if (email === 'michaelboadiasareot@gmail.com' && password === 'Mic@11221092') {
+    const admin = mockUsers.find(u => u.role === 'admin');
+    if (admin) {
+      const merged = mergePersistedIntoUser(admin);
+      storeUser(merged);
+      savePersistedProfile(merged);
+      toastSuccess('Admin login', 'Monitor access granted');
+      return { success: true, user: merged };
+    }
   }
   // Local user fallback
   try {
@@ -207,7 +270,7 @@ export const login = async (email: string, password: string): Promise<{ success:
     const pwHash = await hashPassword(password);
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === pwHash);
     if (found) {
-      const profile: User = {
+      const profile: User = mergePersistedIntoUser({
         id: found.id,
         name: found.name,
         email: found.email,
@@ -218,8 +281,9 @@ export const login = async (email: string, password: string): Promise<{ success:
         certificates: [],
         ctfPoints: 0,
         role: 'user'
-      };
+      });
       storeUser(profile);
+      savePersistedProfile(profile);
       toastSuccess('Signed in (local)', 'Authenticated locally.');
       return { success: true, user: profile };
     }
@@ -232,7 +296,7 @@ export const signup = async (name: string, email: string, password: string): Pro
     const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
     if (error) return { success: false, error: error.message };
     if (data.user) {
-      const profile: User = {
+  const profile: User = mergePersistedIntoUser({
         id: data.user.id,
         name,
         email: data.user.email || email,
@@ -243,8 +307,9 @@ export const signup = async (name: string, email: string, password: string): Pro
         certificates: [],
         ctfPoints: 0,
         role: 'user'
-      };
+  });
       storeUser(profile);
+  savePersistedProfile(profile);
       // Also persist local hashed credentials for offline login
       try {
         const users = loadLocalUsers();
@@ -269,7 +334,7 @@ export const signup = async (name: string, email: string, password: string): Pro
     const pwHash = await hashPassword(password);
     const local: LocalStoredUser = { id: crypto.randomUUID(), email, name, passwordHash: pwHash, createdAt: new Date().toISOString() };
     users.push(local); saveLocalUsers(users);
-    const profile: User = {
+  const profile: User = mergePersistedIntoUser({
       id: local.id,
       name,
       email,
@@ -280,8 +345,9 @@ export const signup = async (name: string, email: string, password: string): Pro
       certificates: [],
       ctfPoints: 0,
       role: 'user'
-    };
+  });
     storeUser(profile);
+  savePersistedProfile(profile);
     toastSuccess('Account created (local)', 'Stored locally.');
     return { success: true, user: profile };
   } catch (e:any) {
@@ -304,9 +370,10 @@ export const logout = (): void => {
 export const adminLogin = async (email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> => {
   await new Promise(r => setTimeout(r, 800));
   if (email === 'michaelboadiasareot@gmail.com' && password === 'Mic@11221092') {
-    const admin = mockUsers.find(u => u.role === 'admin')!;
-    storeUser(admin);
-    return { success: true, user: admin };
+  const admin = mergePersistedIntoUser(mockUsers.find(u => u.role === 'admin')!);
+  storeUser(admin);
+  savePersistedProfile(admin);
+  return { success: true, user: admin };
   }
   // Provide diagnostic hint silently in console (not user facing)
   try { console.debug('[adminLogin] credentials mismatch', { emailAttempt: email }); } catch {}
@@ -325,9 +392,11 @@ export const onAuthChange = (callback: (user: User | null) => void): (() => void
 
 export const enrollInCourse = (courseId: string): void => {
   const user = getStoredUser();
+  if (user?.role === 'admin') { toastError('Admins cannot enroll', 'Monitor-only access'); return; }
   if (user && !user.enrolledCourses.includes(courseId)) {
     user.enrolledCourses.push(courseId);
     storeUser(user);
+  savePersistedProfile(user);
     // optimistic toast
   toastSuccess('Enrolled', 'You have been enrolled in the course.');
     (async () => {
@@ -349,6 +418,7 @@ export const completeCourse = (courseId: string): void => {
   // Award certificate if not already
   if (!user.certificates.includes(courseId)) user.certificates.push(courseId);
     storeUser(user);
+  savePersistedProfile(user);
   }
 };
 
@@ -375,6 +445,7 @@ export const getModuleProgress = (): ModuleProgressRecord => {
 export const toggleModuleCompletion = (courseId: string, moduleTitle: string): void => {
   const user = getStoredUser();
   if (!user) return; // require user login for progress
+  if (user.role === 'admin') { toastError('Admins cannot modify progress', 'Monitor-only'); return; }
   const data = getModuleProgress();
   if (!data[user.id]) data[user.id] = {};
   if (!data[user.id][courseId]) data[user.id][courseId] = { completed: [] };
@@ -424,6 +495,7 @@ export const syncAutoCompletion = (courseId: string, totalModules: number): void
     user.completedCourses.push(courseId);
   if (!user.certificates.includes(courseId)) user.certificates.push(courseId);
     storeUser(user);
+  savePersistedProfile(user);
     try { window.dispatchEvent(new CustomEvent('auth:changed', { detail: { user } })); } catch {}
     (async () => {
       try {
@@ -454,6 +526,7 @@ export const enrollInLearningPath = (pathId: string) => {
   if (!user.learningPaths.includes(pathId)) {
     user.learningPaths.push(pathId);
     storeUser(user);
+  savePersistedProfile(user);
     toastSuccess('Learning Path enrolled', 'Path added to your dashboard');
   }
 };
@@ -465,6 +538,7 @@ export const completeLearningPath = (pathId: string) => {
   if (!user.pathCertificates.includes(pathId)) {
     user.pathCertificates.push(pathId);
     storeUser(user);
+  savePersistedProfile(user);
     toastSuccess('Path completed', 'Certificate issued');
   }
 };
