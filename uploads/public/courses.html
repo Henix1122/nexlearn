@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Courses - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow-lg sticky top-0 z-50' data-component='main-nav'></nav>
+<main class='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+  <h1 class='text-3xl font-bold text-gray-900 mb-6'>All Courses</h1>
+  <div class='flex flex-col md:flex-row md:items-center md:space-x-4 gap-4 pb-4 mb-6 border-b'>
+    <div class='flex items-center gap-2 flex-1'>
+      <input id='search' placeholder='Search courses...' class='w-full md:w-80 border rounded px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500'>
+      <select id='category' class='border rounded px-2 py-2 text-sm'>
+        <option value=''>All Categories</option>
+        <option value='ethical-hacking'>Ethical Hacking</option>
+        <option value='forensics'>Forensics</option>
+        <option value='network-security'>Network Security</option>
+        <option value='cloud-security'>Cloud Security</option>
+        <option value='application-security'>AppSec</option>
+        <option value='digital-privacy'>Privacy</option>
+        <option value='governance-risk'>GRC</option>
+        <option value='crypto'>Cryptography</option>
+        <option value='blueteam'>Blue Team</option>
+        <option value='devsecops'>DevSecOps</option>
+      </select>
+      <select id='level' class='border rounded px-2 py-2 text-sm'>
+        <option value=''>All Levels</option>
+        <option value='BEGINNER'>Beginner</option>
+        <option value='INTERMEDIATE'>Intermediate</option>
+        <option value='ADVANCED'>Advanced</option>
+      </select>
+      <select id='sort' class='border rounded px-2 py-2 text-sm'>
+        <option value='popular'>Most Popular</option>
+        <option value='rating'>Highest Rated</option>
+        <option value='new'>Newest</option>
+        <option value='price-asc'>Price: Low to High</option>
+        <option value='price-desc'>Price: High to Low</option>
+      </select>
+    </div>
+    <div class='flex items-center gap-2'>
+      <span id='result-count' class='text-xs text-gray-500'></span>
+      <button id='reset-btn' class='text-xs text-gray-600 hover:text-indigo-600'>Reset</button>
+    </div>
+  </div>
+  <div id='course-grid' class='grid gap-8 sm:grid-cols-2 lg:grid-cols-3'></div>
+  <div id='loading-skeleton' class='grid gap-8 sm:grid-cols-2 lg:grid-cols-3 mt-4 hidden'></div>
+  <div id='error-box' class='mt-6 hidden'></div>
+  <div class='mt-10 flex flex-col items-center gap-4'>
+    <button id='load-more-btn' class='hidden px-5 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700'>Load More</button>
+    <div id='infinite-sentinel' class='h-6'></div>
+  </div>
+  <div id='pagination' class='mt-10 flex flex-wrap gap-2 hidden'></div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const grid=document.getElementById('course-grid');
+ const paginationEl=document.getElementById('pagination');
+ const searchEl=document.getElementById('search');
+ const levelEl=document.getElementById('level');
+ const categoryEl=document.getElementById('category');
+ const sortEl=document.getElementById('sort');
+ const resultCount=document.getElementById('result-count');
+ const resetBtn=document.getElementById('reset-btn');
+ const skeletonEl=document.getElementById('loading-skeleton');
+ const errorBox=document.getElementById('error-box');
+ const loadMoreBtn=document.getElementById('load-more-btn');
+ let page=1; let totalPages=1; const pageSize=24; let currentQuery=''; let loading=false; let reachedEnd=false; let observer;
+ function starIcons(r){ if(window.NexLearn?.starHTML){ return window.NexLearn.starHTML(r,{size:'sm',showValue:true}); } let out=''; for(let i=1;i<=5;i++){ out+=`<span class='${r>=i? 'text-yellow-400':'text-gray-300'}'>★</span>`;} return `<span class='inline-flex items-center gap-1'>${out}<span class='text-[11px] text-gray-600 ml-1'>${r.toFixed(1)}</span></span>`; }
+ function money(c){return c===0? 'FREE': '$'+(c/100).toFixed(2);} 
+ function courseCard(c){return `<div class='bg-white p-5 rounded-lg shadow relative hover:shadow-md transition'>
+ <span class='absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold tracking-wide'>${c.level}</span>
+ <div class='h-28 w-full mb-3 bg-gray-100 rounded flex items-center justify-center overflow-hidden'>${c.thumbnailUrl? `<img src='${c.thumbnailUrl}' alt='${c.title}' class='object-cover w-full h-full'>`:'<i data-feather="layers" class="text-gray-400"></i>'}</div>
+ <h3 class='text-base font-semibold text-gray-900 leading-tight line-clamp-2 min-h-[2.5rem]'>${c.title}</h3>
+ <p class='mt-2 text-xs text-gray-500 line-clamp-2'>${c.description}</p>
+  <div class='mt-3 flex items-center justify-between text-[11px] text-gray-600'>
+   <span class='flex items-center gap-1' aria-label='Rating ${c.ratingAverage.toFixed(1)} out of 5 with ${c.ratingCount} reviews'>${starIcons(c.ratingAverage)}<span class='text-gray-400'>(${c.ratingCount})</span></span>
+   <span>${c.enrollmentCount} learners</span>
+ </div>
+ <div class='mt-3 flex items-center justify-between'>
+   <span class='text-sm font-medium text-gray-900'>${money(c.price)}</span>
+   <a href='course-detail.html?slug=${c.slug}' class='text-indigo-600 text-sm font-medium hover:underline'>View</a>
+ </div>
+ </div>` }
+ function showSkeleton(count=9){ skeletonEl.classList.remove('hidden'); grid.classList.add('opacity-50'); skeletonEl.innerHTML=Array.from({length:count}).map(()=>`<div class='animate-pulse bg-white p-5 rounded-lg shadow'>
+ <div class='h-5 w-16 bg-gray-200 rounded mb-3 ml-auto'></div>
+ <div class='h-28 w-full mb-3 bg-gray-200 rounded'></div>
+ <div class='h-4 w-3/4 bg-gray-200 rounded'></div>
+ <div class='h-3 w-1/2 bg-gray-200 rounded mt-2'></div>
+ <div class='mt-4 flex justify-between items-center'>
+   <div class='h-3 w-20 bg-gray-200 rounded'></div>
+   <div class='h-3 w-16 bg-gray-200 rounded'></div>
+ </div>
+ <div class='mt-4 flex justify-between items-center'>
+   <div class='h-5 w-14 bg-gray-200 rounded'></div>
+   <div class='h-5 w-16 bg-gray-200 rounded'></div>
+ </div>
+ </div>`).join(''); }
+ function hideSkeleton(){ skeletonEl.classList.add('hidden'); grid.classList.remove('opacity-50'); }
+ function showError(msg){ errorBox.innerHTML=`<div class='bg-red-50 border border-red-200 text-red-600 p-4 rounded flex items-start gap-3'><span class='text-sm flex-1'>${msg}</span><button id='retry-btn' class='text-xs px-2 py-1 bg-red-600 text-white rounded'>Retry</button></div>`; errorBox.classList.remove('hidden'); document.getElementById('retry-btn').onclick=()=>{ errorBox.classList.add('hidden'); load(); }; }
+ async function load(){ if(loading||reachedEnd) return; loading=true; showSkeleton(page===1?12:6);
+   const params=new URLSearchParams();
+   params.set('page',page.toString()); params.set('pageSize',pageSize.toString());
+   if(searchEl.value.trim()) params.set('q',searchEl.value.trim()); if(categoryEl.value) params.set('category',categoryEl.value); if(levelEl.value) params.set('level',levelEl.value); if(sortEl.value) params.set('sort',sortEl.value);
+   currentQuery=params.toString(); let res; try{ res=await fetch('/courses?'+currentQuery);}catch(e){ hideSkeleton(); loading=false; showError('Network error.'); return; }
+   if(!res.ok){ hideSkeleton(); loading=false; if(page===1) grid.innerHTML=''; showError('Failed to load courses.'); return; }
+   const data=await res.json(); totalPages=data.totalPages; resultCount.textContent=`${data.total} courses`; appendCourses(data.items);
+   if(page>=totalPages){ reachedEnd=true; loadMoreBtn.classList.add('hidden'); } else { loadMoreBtn.classList.remove('hidden'); }
+   if(window.feather){ try{ feather.replace(); }catch(e){} }
+   history.replaceState(null,'','?'+currentQuery); hideSkeleton(); loading=false; }
+ function appendCourses(items){ if(page===1) grid.innerHTML=''; if(!items.length && page===1){ grid.innerHTML='<p class="text-sm text-gray-500">No courses found.</p>'; reachedEnd=true; loadMoreBtn.classList.add('hidden'); return; } grid.insertAdjacentHTML('beforeend', items.map(courseCard).join('')); }
+ function renderPagination(){ paginationEl.innerHTML=''; /* intentionally hidden; infinite scroll mode */ }
+ let debounceT; function changed(){ page=1; totalPages=1; reachedEnd=false; clearTimeout(debounceT); debounceT=setTimeout(()=>{ load(); },350); }
+ [searchEl, levelEl, categoryEl, sortEl].forEach(el=>el.addEventListener('input',changed));
+ resetBtn.addEventListener('click',()=>{ searchEl.value=''; levelEl.value=''; categoryEl.value=''; sortEl.value='popular'; page=1; totalPages=1; reachedEnd=false; load(); });
+ loadMoreBtn.addEventListener('click',()=>{ if(page<totalPages){ page++; load(); }});
+ function initInfinite(){ const sentinel=document.getElementById('infinite-sentinel'); if(!sentinel) return; if('IntersectionObserver' in window){ observer=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting && !loading && !reachedEnd){ if(page<totalPages){ page++; load(); } } }); },{rootMargin:'400px'}); observer.observe(sentinel); // hide Load More in modern browsers
+   loadMoreBtn.classList.add('hidden');
+ } }
+ (function initFromURL(){ const usp=new URLSearchParams(location.search); if(usp.get('q')) searchEl.value=usp.get('q'); if(usp.get('category')) categoryEl.value=usp.get('category'); if(usp.get('level')) levelEl.value=usp.get('level'); if(usp.get('sort')) sortEl.value=usp.get('sort'); if(usp.get('page')) page=parseInt(usp.get('page'))||1; })();
+ initInfinite();
+ load();
+</script>
+</body></html>

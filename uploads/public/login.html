@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Login - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 min-h-screen flex flex-col'>
+<nav class='bg-white shadow-sm' data-component='main-nav'></nav>
+<main class='flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8'>
+  <div class='max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow'>
+    <div>
+      <h2 class='mt-2 text-center text-3xl font-extrabold text-gray-900'>Sign in</h2>
+      <p class='mt-2 text-center text-sm text-gray-600'>Or <a href='signup.html' class='text-indigo-600 hover:text-indigo-500 font-medium'>create account</a></p>
+    </div>
+  <form id='login-form' class='space-y-6'>
+      <div>
+        <label class='block text-sm font-medium text-gray-700'>Email</label>
+        <div class='mt-1 relative'><input name='email' type='email' required class='w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'></div>
+      </div>
+      <div>
+        <label class='block text-sm font-medium text-gray-700'>Password</label>
+        <div class='mt-1 relative'><input name='password' type='password' required class='w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'></div>
+      </div>
+      <button class='w-full py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700'>Sign in</button>
+    </form>
+    <p class='text-xs text-gray-500 text-center'>Admin? <a href='admin-login.html' class='text-indigo-600'>Sign in here</a></p>
+  </div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+async function api(path,opts){return fetch(path,{headers:{'Content-Type':'application/json',...(opts&&opts.headers)},...opts}).then(r=>r.json().then(j=>({ok:r.ok,status:r.status,body:j})))}
+document.getElementById('login-form').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const fd=new FormData(e.target);
+ const payload={email:fd.get('email'),password:fd.get('password')};
+ const res=await api('/auth/login',{method:'POST',body:JSON.stringify(payload)});
+ if(!res.ok){alert((res.body.error||'Login failed')+(res.status===423?' (locked)':''));return;}
+ const user={id:res.body.user.id,email:res.body.user.email,role:res.body.user.role,token:res.body.token, initials: (payload.email[0]||'U').toUpperCase()};
+ localStorage.setItem('nex_user',JSON.stringify(user));
+ location.href='dashboard.html';
+});
+</script>
+</body></html>

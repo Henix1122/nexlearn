@@ -1,0 +1,12 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Logging Out - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'></head><body class='bg-gray-50 flex items-center justify-center min-h-screen'>
+<div class='bg-white p-8 rounded shadow text-center max-w-sm w-full'>
+  <h1 class='text-xl font-semibold text-gray-800 mb-4'>Signing you out...</h1>
+  <p class='text-sm text-gray-500 mb-6'>Clearing your session securely.</p>
+  <div class='w-full bg-gray-200 h-2 rounded overflow-hidden'><div id='bar' class='h-2 bg-indigo-600 w-0'></div></div>
+  <p id='status' class='mt-4 text-xs text-gray-400 tracking-wide'>Processing</p>
+</div>
+<script>
+ localStorage.removeItem('nex_user');
+ let w=0;const bar=document.getElementById('bar');const status=document.getElementById('status');const int=setInterval(()=>{w+=10;bar.style.width=w+'%';if(w>=100){clearInterval(int);status.textContent='Done';location.href='login.html';}},120);
+</script>
+</body></html>

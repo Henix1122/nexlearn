@@ -1,0 +1,4 @@
+/* Shared styles */
+.logo-text {font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;}
+.fade-in {animation: fadeIn .6s ease forwards; opacity:0}
+@keyframes fadeIn {to {opacity:1}}

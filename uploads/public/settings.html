@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Settings - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow sticky top-0 z-40' data-component='main-nav'></nav>
+<main class='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+  <h1 class='text-3xl font-bold mb-6'>Account Settings</h1>
+  <form id='settings-form' class='space-y-6 bg-white p-6 rounded shadow'>
+    <div>
+      <label class='block text-sm font-medium text-gray-700'>Full Name</label>
+      <input name='name' class='mt-1 w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'>
+    </div>
+    <div>
+      <label class='block text-sm font-medium text-gray-700'>Institution</label>
+      <input name='institution' class='mt-1 w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'>
+    </div>
+    <div>
+      <label class='block text-sm font-medium text-gray-700'>Preferred Plan</label>
+      <select name='plan' class='mt-1 w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'>
+        <option>Basic</option><option>Pro</option><option>Enterprise</option>
+      </select>
+    </div>
+    <button class='bg-indigo-600 text-white px-4 py-2 rounded text-sm'>Save</button>
+  </form>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const user=JSON.parse(localStorage.getItem('nex_user')||'null'); if(!user){location.href='login.html';}
+ const form=document.getElementById('settings-form');
+ if(user.name) form.name.value=user.name; if(user.institution) form.institution.value=user.institution; if(user.plan) form.plan.value=user.plan;
+ form.addEventListener('submit',e=>{e.preventDefault();user.name=form.name.value;user.institution=form.institution.value;user.plan=form.plan.value;localStorage.setItem('nex_user',JSON.stringify(user));alert('Saved');});
+ feather.replace();
+</script>
+</body></html>

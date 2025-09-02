@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Verify Certificate - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow-sm' data-component='main-nav'></nav>
+<main class='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+  <h1 class='text-3xl font-bold text-gray-900 mb-6'>Verify Certificate</h1>
+  <form id='verify-form' class='bg-white shadow rounded p-6 flex flex-col gap-4 md:flex-row md:items-end'>
+    <div class='flex-1'>
+      <label class='block text-sm font-medium text-gray-700'>Certificate Serial</label>
+      <input id='serial' required placeholder='e.g. NXL-ABC123-FF09A1' class='mt-1 w-full border rounded px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500'>
+    </div>
+    <button class='h-10 px-6 bg-indigo-600 text-white rounded hover:bg-indigo-700 mt-2 md:mt-0'>Verify</button>
+  </form>
+  <div id='result' class='mt-8'></div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const usp=new URLSearchParams(location.search); const preset=usp.get('serial'); if(preset){ document.getElementById('serial').value=preset; verify(preset); }
+ document.getElementById('verify-form').addEventListener('submit',e=>{e.preventDefault(); verify(document.getElementById('serial').value.trim());});
+ async function verify(serial){ if(!serial){return;} const res=await fetch('/certificates/verify/'+encodeURIComponent(serial)); const el=document.getElementById('result'); if(res.status===404){ el.innerHTML='<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">Invalid or unknown certificate.</div>'; return; } const data=await res.json(); if(!data.valid){ el.innerHTML='<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">Invalid certificate.</div>'; return; } el.innerHTML=`<div class='bg-white shadow rounded p-6'>
+   <h2 class='text-2xl font-semibold text-gray-900 mb-2'>Valid Certificate</h2>
+   <p class='text-sm text-gray-600 mb-4'>Serial: <code class='px-1 py-0.5 bg-gray-100 rounded'>${data.serial}</code></p>
+   <ul class='text-sm space-y-1'>
+     <li><strong>Student:</strong> ${data.user.email}</li>
+     <li><strong>Course:</strong> ${data.course.title}</li>
+     <li><strong>Issued:</strong> ${new Date(data.issuedAt).toLocaleString()}</li>
+     <li><strong>Plan:</strong> ${data.plan}</li>
+   </ul>
+   <div class='mt-4 flex gap-2'>
+  <a href='certificate.html?serial=${encodeURIComponent(data.serial)}' class='text-indigo-600 text-sm hover:underline'>View Certificate</a>
+     <button onclick='navigator.clipboard.writeText("${location.origin}/verify-certificate.html?serial=${data.serial}")' class='text-xs px-2 py-1 bg-indigo-600 text-white rounded'>Copy Share Link</button>
+   </div>
+ </div>`; }
+</script>
+</body></html>

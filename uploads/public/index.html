@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>NexLearn - Cybersecurity Learning Platform</title>
+	<link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; img-src 'self' data: https://randomuser.me; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.tailwindcss.com; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; font-src 'self' data:;" />
+	<script src="https://cdn.tailwindcss.com"></script>
+	<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+	<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+	<link rel="stylesheet" href="assets/css/styles.css" />
+	<style>
+		.logo-text {background: linear-gradient(135deg,#3b82f6 0%,#8b5cf6 50%,#ec4899 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;}
+		.course-card:hover {transform:translateY(-5px);box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04)}
+		.nav-link:hover .nav-icon {transform:scale(1.2)}
+		.gradient-bg {background:linear-gradient(135deg,#1e3a8a 0%,#6b21a8 100%)}
+	</style>
+</head>
+<body class="bg-gray-50 font-sans">
+	<!-- Navigation -->
+	<nav class="bg-white shadow-lg sticky top-0 z-50" data-component="main-nav"></nav>
+
+	<!-- Hero Section -->
+	<div class="gradient-bg text-white">
+		<div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+			<div class="text-center">
+				<h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">Master Cybersecurity with NexLearn</h1>
+				<p class="mt-6 max-w-lg mx-auto text-xl">Learn ethical hacking, digital forensics, and network security from industry experts with hands-on labs and CTF challenges.</p>
+				<div class="mt-10 flex justify-center space-x-6">
+					<a href="signup.html" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-indigo-700 bg-white hover:bg-indigo-50">Get Started</a>
+					<a href="courses.html" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-500 bg-opacity-60 hover:bg-opacity-70">Browse Courses</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Popular Courses -->
+	<section class="py-12 bg-white" id="popular-courses">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="lg:text-center">
+				<h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Courses</h2>
+				<p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">Popular Cybersecurity Courses</p>
+				<p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">Start your cybersecurity journey with our most popular courses</p>
+			</div>
+			<div class="mt-10" id="home-course-cards" data-dynamic="course-cards">
+				<!-- Dynamic course cards injected by main.js -->
+			</div>
+		</div>
+	</section>
+
+	<!-- CTF Section -->
+	<section class="bg-gray-50 py-12">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="lg:text-center">
+				<h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Challenge Yourself</h2>
+				<p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">Capture The Flag Arena</p>
+				<p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">Test your skills with our hands-on cybersecurity challenges</p>
+			</div>
+			<div class="mt-10">
+				<div class="bg-white overflow-hidden shadow rounded-lg">
+					<div class="px-4 py-5 sm:p-6">
+						<div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
+							<div>
+								<h3 class="text-lg leading-6 font-medium text-gray-900">Practice your hacking skills</h3>
+								<p class="mt-2 max-w-xl text-sm text-gray-500">Our CTF arena provides realistic scenarios to practice penetration testing, digital forensics, and reverse engineering in a safe environment.</p>
+								<div class="mt-5">
+									<a href="ctf.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Enter CTF Arena</a>
+								</div>
+							</div>
+							<div class="flex items-center justify-center">
+								<div class="bg-indigo-100 rounded-full p-8"><i data-feather="flag" class="h-16 w-16 text-indigo-600"></i></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Membership -->
+	<section class="py-12 bg-white" id="membership">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="lg:text-center">
+				<h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Membership</h2>
+				<p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">Unlock Premium Benefits</p>
+				<p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">Get access to all courses, certificates, and exclusive content</p>
+			</div>
+			<div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-3" id="membership-plans" data-dynamic="plans"></div>
+		</div>
+	</section>
+
+	<!-- Testimonials -->
+	<section class="bg-indigo-50 py-12" id="testimonials">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="lg:text-center">
+				<h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Testimonials</h2>
+				<p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">What our students say</p>
+			</div>
+			<div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3" id="testimonial-cards" data-dynamic="testimonials"></div>
+		</div>
+	</section>
+
+	<!-- CTA -->
+	<section class="bg-indigo-700">
+		<div class="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
+			<h2 class="text-3xl font-extrabold text-white sm:text-4xl"><span class="block">Ready to start your cybersecurity journey?</span><span class="block">Join NexLearn today.</span></h2>
+			<p class="mt-4 text-lg leading-6 text-indigo-200">Get access to all our courses, CTF challenges, and certificates with a NexLearn membership.</p>
+			<a href="signup.html" class="mt-8 w-full inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 sm:w-auto">Sign up for free</a>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="bg-gray-800" data-component="main-footer"></footer>
+
+	<script src="assets/js/main.js"></script>
+	<script>AOS.init();feather.replace();</script>
+</body>
+</html>

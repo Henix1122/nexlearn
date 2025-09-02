@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>Course Detail - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow sticky top-0 z-40' data-component='main-nav'></nav>
+<main class='max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+  <a href='courses.html' class='text-sm text-indigo-600'>&larr; Back to courses</a>
+  <div id='course-hero' class='mt-4 mb-8'></div>
+  <div class='grid gap-8 md:grid-cols-3'>
+    <div class='md:col-span-2 space-y-8'>
+      <div class='bg-white rounded shadow p-6'>
+        <h2 class='text-xl font-semibold mb-4'>Overview</h2>
+        <p id='course-description' class='text-gray-700 leading-relaxed'></p>
+        <div class='mt-4 flex flex-wrap gap-3 text-xs'>
+          <span id='badge-level' class='px-2 py-1 rounded bg-indigo-100 text-indigo-700 font-medium'></span>
+          <span id='badge-lang' class='px-2 py-1 rounded bg-gray-100 text-gray-700'></span>
+          <span id='badge-hours' class='px-2 py-1 rounded bg-gray-100 text-gray-700'></span>
+          <span id='badge-category' class='px-2 py-1 rounded bg-gray-100 text-gray-700'></span>
+        </div>
+      </div>
+      <div class='bg-white rounded shadow p-6'>
+        <h2 class='text-xl font-semibold mb-4'>Curriculum</h2>
+        <ol id='curriculum' class='list-decimal ml-6 space-y-2 text-gray-700'></ol>
+      </div>
+      <div class='bg-white rounded shadow p-6'>
+        <h2 class='text-xl font-semibold mb-4'>Reviews <span id='review-meta' class='text-sm text-gray-500'></span></h2>
+        <div id='review-list' class='space-y-4 mb-6'></div>
+        <form id='review-form' class='space-y-4 hidden'>
+          <div>
+            <label class='block text-sm font-medium text-gray-700'>Rating</label>
+            <select name='rating' class='mt-1 w-32 border rounded px-2 py-1'>
+              <option value='5'>5 - Excellent</option>
+              <option value='4'>4 - Good</option>
+              <option value='3'>3 - Fair</option>
+              <option value='2'>2 - Poor</option>
+              <option value='1'>1 - Bad</option>
+            </select>
+          </div>
+          <div><label class='block text-sm font-medium text-gray-700'>Your Review</label><textarea name='text' required class='mt-1 w-full border rounded px-3 py-2 h-24 focus:ring-indigo-500 focus:border-indigo-500'></textarea></div>
+          <button class='bg-indigo-600 text-white px-4 py-2 rounded text-sm'>Submit Review</button>
+        </form>
+        <p id='review-login-hint' class='text-sm text-gray-500'></p>
+      </div>
+    </div>
+    <aside class='md:col-span-1 space-y-6'>
+      <div class='bg-white rounded shadow p-6 sticky top-20'>
+        <div id='thumb-wrapper' class='mb-4 h-40 w-full bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm'>Thumbnail</div>
+        <div class='flex items-baseline gap-2'>
+          <span id='course-price' class='text-2xl font-bold text-gray-900'></span>
+          <span id='course-price-note' class='text-xs text-gray-500'></span>
+        </div>
+        <div class='mt-3 flex items-center gap-4 text-sm text-gray-600'>
+          <span id='rating-display' class='flex items-center gap-1'></span>
+          <span id='enrollment-count'></span>
+        </div>
+        <button id='enroll-btn' class='mt-5 w-full bg-indigo-600 text-white py-2 rounded font-medium hover:bg-indigo-700'>Enroll for Free</button>
+        <div class='mt-4'>
+          <label class='block text-xs font-semibold text-gray-500 mb-1'>Progress</label>
+          <div class='w-full bg-gray-200 rounded h-2 overflow-hidden'>
+            <div id='progress-bar' class='h-2 bg-indigo-600 w-0'></div>
+          </div>
+          <p id='progress-text' class='mt-1 text-xs text-gray-600'>0% complete</p>
+          <button id='complete-btn' class='mt-3 hidden text-xs px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700'>Mark 100% (Demo)</button>
+          <button id='certificate-btn' class='mt-3 hidden text-xs px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600'>Get Certificate</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const params=new URLSearchParams(location.search);
+ const slug=params.get('slug');
+ const state={ course:null, enrollment:null, token:null, user:null };
+ try{ const u=localStorage.getItem('nex_user'); if(u){ state.user=JSON.parse(u); state.token=state.user.token; } }catch(e){}
+ function authHeaders(){return state.token? { 'Authorization':'Bearer '+state.token }: {};}
+ async function fetchCourse(){
+   if(!slug){ document.getElementById('course-hero').innerHTML='<p class="text-red-600">Missing course slug.</p>'; return; }
+   const res=await fetch('/courses/'+encodeURIComponent(slug));
+   if(!res.ok){ document.getElementById('course-hero').innerHTML='<p class="text-red-600">Course not found.</p>'; return; }
+   const data=await res.json(); state.course=data; renderCourse(); fetchReviews(); if(state.user) fetchEnrollment();
+ }
+ function money(cents,freeType){ if(freeType==='FREE'||cents===0) return 'FREE'; return '$'+(cents/100).toFixed(2); }
+ function renderCourse(){ const c=state.course; if(!c) return; document.title=c.title+' - NexLearn';
+   document.getElementById('course-hero').innerHTML=`<h1 class='text-3xl font-bold text-gray-900 mb-3'>${c.title}</h1>`;
+   document.getElementById('course-description').textContent=c.description;
+   document.getElementById('badge-level').textContent=c.level;
+   document.getElementById('badge-lang').textContent=c.language.toUpperCase();
+   document.getElementById('badge-hours').textContent=c.estimatedHours+' hrs';
+   document.getElementById('badge-category').textContent=c.category.replace(/-/g,' ');
+   document.getElementById('course-price').textContent=money(c.price,c.priceType);
+   document.getElementById('course-price-note').textContent=c.priceType==='FREE'?'':'one-time';
+  const ratingNode = document.getElementById('rating-display');
+  ratingNode.setAttribute('aria-label', `Rating ${c.ratingAverage.toFixed(1)} out of 5 based on ${c.ratingCount} reviews`);
+  ratingNode.innerHTML = window.NexLearn?.starHTML? window.NexLearn.starHTML(c.ratingAverage,{size:'lg',showValue:true,countValue:c.ratingCount}): starRow(c.ratingAverage,c.ratingCount);
+   document.getElementById('enrollment-count').textContent = c.enrollmentCount+' learners';
+   if(c.thumbnailUrl) document.getElementById('thumb-wrapper').innerHTML = `<img src='${c.thumbnailUrl}' alt='${c.title}' class='h-40 w-full object-cover rounded'>`;
+   // curriculum modules
+   const cur=document.getElementById('curriculum'); cur.innerHTML=c.modules && c.modules.length? c.modules.map(m=>`<li>${m.title || m.name || ('Module '+(m.index+1))}</li>`).join(''):'<li>Curriculum coming soon</li>';
+ }
+ async function fetchEnrollment(){
+   const res=await fetch('/enrollments',{ headers: authHeaders() });
+   if(!res.ok) return; const list=await res.json(); state.enrollment=list.find(e=>e.courseId===state.course.id);
+   if(state.enrollment){ updateProgressUI(); document.getElementById('enroll-btn').textContent='Enrolled'; document.getElementById('enroll-btn').disabled=true; document.getElementById('complete-btn').classList.remove('hidden'); }
+ }
+ function updateProgressUI(){ if(!state.enrollment) return; const p=state.enrollment.progress; document.getElementById('progress-bar').style.width=p+'%'; document.getElementById('progress-text').textContent=p+'% complete'; if(p>=100) document.getElementById('certificate-btn').classList.remove('hidden'); }
+ async function enroll(){ if(!state.user){ location.href='login.html'; return; } const res=await fetch('/enrollments/'+state.course.id,{method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}}); if(res.ok){ state.enrollment=await res.json(); updateProgressUI(); document.getElementById('enroll-btn').textContent='Enrolled'; document.getElementById('enroll-btn').disabled=true; document.getElementById('complete-btn').classList.remove('hidden'); } else { alert('Enroll failed'); } }
+ async function markComplete(){ if(!state.enrollment) return; const res=await fetch('/enrollments/'+state.course.id+'/progress',{method:'PATCH', headers:{'Content-Type':'application/json',...authHeaders()}, body: JSON.stringify({progress:100})}); if(res.ok){ state.enrollment=await res.json(); updateProgressUI(); } }
+ async function issueCertificate(){ const btn=document.getElementById('certificate-btn'); btn.disabled=true; btn.textContent='Issuing...'; const res=await fetch('/certificates/issue',{method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body: JSON.stringify({courseId: state.course.id})}); const data=await res.json(); if(res.ok){
+   const link=`verify-certificate.html?serial=${encodeURIComponent(data.serial)}`;
+   alert('Certificate issued! Opening verification page.'); window.open(link,'_blank');
+ } else { alert(data.error||'Issue failed'); }
+ btn.disabled=false; btn.textContent='Get Certificate'; }
+ function starRow(avg,count){ return (window.NexLearn?.starHTML? window.NexLearn.starHTML(avg,{size:'lg',showValue:true,countValue:count}): (function(){ let out=''; for(let i=1;i<=5;i++){ out+=`<span class='${avg>=i? 'text-yellow-400':'text-gray-300'} text-lg leading-none'>★</span>`;} return `<span class='flex items-center'>${out}<span class='ml-2 text-xs text-gray-600'>${avg.toFixed(1)} (${count})</span></span>`; })()); }
+ async function fetchReviews(){ const res=await fetch('/reviews/course/'+state.course.id); if(!res.ok) return; const list=await res.json(); const wrap=document.getElementById('review-list'); document.getElementById('review-meta').textContent = list.length? `(${list.length})`:''; wrap.innerHTML= list.length? list.map(r=>{
+   const stars = window.NexLearn?.starHTML? window.NexLearn.starHTML(r.rating,{size:'sm',showValue:false}) : r.rating+' ★';
+   return `<div class='border p-3 rounded bg-white'><div class='flex items-center justify-between'><div class='text-xs text-gray-500' aria-label='Rating ${r.rating} out of 5'>${stars}</div><div class='text-[10px] text-gray-400'>${new Date(r.createdAt||Date.now()).toLocaleDateString()}</div></div><p class='text-gray-800 text-sm mt-1'>${r.text}</p></div>`; }).join(''):'<p class="text-sm text-gray-500">No reviews yet.</p>'; if(state.user){ document.getElementById('review-form').classList.remove('hidden'); document.getElementById('review-login-hint').textContent=''; } else { document.getElementById('review-login-hint').innerHTML='Please <a class="text-indigo-600" href="login.html">login</a> to write a review.'; }
+ }
+ document.addEventListener('click', e=>{
+   if(e.target && e.target.id==='enroll-btn') enroll();
+   if(e.target && e.target.id==='complete-btn') markComplete();
+   if(e.target && e.target.id==='certificate-btn') issueCertificate();
+ });
+ document.getElementById('review-form').addEventListener('submit', async e=>{ e.preventDefault(); if(!state.user){ location.href='login.html'; return; } const fd=new FormData(e.target); const payload={ courseId: state.course.id, rating: parseInt(fd.get('rating')), text: fd.get('text') }; const res=await fetch('/reviews',{method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body: JSON.stringify(payload)}); const data=await res.json(); if(!res.ok){ alert(data.error||'Review failed'); return; } e.target.reset(); fetchCourse(); });
+ fetchCourse();
+ feather.replace();
+</script>
+</body></html>

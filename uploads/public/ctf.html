@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>CTF Arena - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow-lg sticky top-0 z-50' data-component='main-nav'></nav>
+<main class='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10'>
+  <h1 class='text-3xl font-bold mb-6'>CTF Arena</h1>
+  <p class='text-gray-600 max-w-2xl mb-8'>Practice in realistic attack/defense, digital forensics, reverse engineering and OSINT scenarios. Challenges scale with your skill.</p>
+  <div class='grid gap-6 md:grid-cols-2 lg:grid-cols-3' id='ctf-grid'></div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const challenges=[{id:'web-sql',title:'SQL Injection Basics',difficulty:'Easy',points:100,tag:'Web'},{id:'rev-bin',title:'Binary Reversing 101',difficulty:'Medium',points:200,tag:'Reversing'},{id:'crypto-shift',title:'Crypto Caesar Shift',difficulty:'Easy',points:50,tag:'Crypto'},{id:'forensics-mem',title:'Memory Artifact Hunt',difficulty:'Hard',points:400,tag:'Forensics'}];
+ const grid=document.getElementById('ctf-grid');
+ grid.innerHTML=challenges.map(c=>`<div class='bg-white p-5 rounded-lg shadow relative'><span class='absolute top-3 right-3 text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700'>${c.difficulty}</span><h3 class='text-lg font-semibold text-gray-900'>${c.title}</h3><p class='mt-2 text-sm text-gray-500'>Category: ${c.tag}</p><div class='mt-4 flex justify-between items-center'><span class='text-sm font-medium text-gray-900'>${c.points} pts</span><button class='text-sm text-white bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-700' data-start='${c.id}'>Start</button></div></div>`).join('');
+ feather.replace();
+ document.addEventListener('click',e=>{if(e.target.matches('[data-start]')){alert('Starting sandbox for '+e.target.dataset.start+' (placeholder).');}});
+</script>
+</body></html>

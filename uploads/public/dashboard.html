@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'><title>User Dashboard - NexLearn</title><script src='https://cdn.tailwindcss.com'></script><link rel='icon' href='assets/favicon.ico'><script src='https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js'></script></head><body class='bg-gray-50 font-sans'>
+<nav class='bg-white shadow sticky top-0 z-40' data-component='main-nav'></nav>
+<main class='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+  <h1 class='text-3xl font-bold mb-6'>Dashboard</h1>
+  <div id='user-welcome' class='mb-8 text-gray-700'></div>
+  <div class='grid md:grid-cols-3 gap-6 mb-10'>
+    <div class='bg-white p-5 rounded shadow'><h3 class='font-semibold text-gray-900 flex items-center'><i data-feather='activity' class='w-5 h-5 text-indigo-600 mr-2'></i>Progress</h3><p class='text-sm text-gray-600 mt-2'>Placeholder progress analytics.</p></div>
+    <div class='bg-white p-5 rounded shadow'><h3 class='font-semibold text-gray-900 flex items-center'><i data-feather='flag' class='w-5 h-5 text-indigo-600 mr-2'></i>CTF Stats</h3><p class='text-sm text-gray-600 mt-2'>Challenges solved: 0</p></div>
+    <div class='bg-white p-5 rounded shadow'><h3 class='font-semibold text-gray-900 flex items-center'><i data-feather='award' class='w-5 h-5 text-indigo-600 mr-2'></i>Certificates</h3><p class='text-sm text-gray-600 mt-2'>No certificates yet.</p></div>
+  </div>
+  <h2 class='text-xl font-semibold mb-4'>Enrolled Courses</h2>
+  <div id='enrolled-courses' class='grid sm:grid-cols-2 lg:grid-cols-3 gap-6'></div>
+</main>
+<footer class='bg-gray-800' data-component='main-footer'></footer>
+<script src='assets/js/main.js'></script>
+<script>
+ const user=JSON.parse(localStorage.getItem('nex_user')||'null'); if(!user){location.href='login.html';}
+ document.getElementById('user-welcome').textContent='Welcome, '+(user.name||user.email)+'!';
+ const enrolled=[{title:'Ethical Hacking Fundamentals',progress:25,id:'eh-fund'},{title:'Cybersecurity Essentials',progress:60,id:'cyb-essential'}];
+ const wrap=document.getElementById('enrolled-courses');
+ wrap.innerHTML=enrolled.map(c=>`<div class='bg-white p-5 rounded shadow'><h3 class='font-semibold text-gray-900 mb-2'>${c.title}</h3><div class='w-full bg-gray-200 h-2 rounded'><div class='h-2 bg-indigo-600 rounded' style='width:${c.progress}%'></div></div><p class='mt-2 text-xs text-gray-500'>${c.progress}% complete</p><a class='text-sm text-indigo-600 mt-3 inline-block' href='course-detail.html?id=${c.id}'>Continue</a></div>`).join('');
+ feather.replace();
+</script>
+</body></html>
