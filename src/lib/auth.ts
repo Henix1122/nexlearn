@@ -12,6 +12,32 @@ const emitToast = (opts: { title: string; description?: string; variant?: string
 export const toastSuccess = (title: string, description?: string) => emitToast({ title, description });
 export const toastError = (title: string, description?: string) => emitToast({ title, description, variant: 'destructive' });
 
+// -------- Local credential storage fallback (when Supabase auth not available) --------
+interface LocalStoredUser {
+  id: string;
+  email: string;
+  name: string;
+  passwordHash: string; // sha-256
+  createdAt: string;
+}
+
+const LOCAL_USERS_KEY = 'nex_local_users';
+const loadLocalUsers = (): LocalStoredUser[] => {
+  try { return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]'); } catch { return []; }
+};
+const saveLocalUsers = (users: LocalStoredUser[]) => localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+
+const hashPassword = async (pw: string): Promise<string> => {
+  try {
+    const enc = new TextEncoder().encode(pw);
+    const digest = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  } catch {
+    // Fallback weak hash
+    return btoa(pw).split('').reverse().join('');
+  }
+};
+
 // Simple retry queue for failed Supabase mutations
 interface PendingOp {
   id: string;
@@ -175,6 +201,29 @@ export const login = async (email: string, password: string): Promise<{ success:
   toastSuccess('Demo login', 'Signed in with demo account.');
     return { success: true, user };
   }
+  // Local user fallback
+  try {
+    const users = loadLocalUsers();
+    const pwHash = await hashPassword(password);
+    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === pwHash);
+    if (found) {
+      const profile: User = {
+        id: found.id,
+        name: found.name,
+        email: found.email,
+        initials: found.name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase(),
+        membershipType: 'Basic',
+        enrolledCourses: [],
+        completedCourses: [],
+        certificates: [],
+        ctfPoints: 0,
+        role: 'user'
+      };
+      storeUser(profile);
+      toastSuccess('Signed in (local)', 'Authenticated locally.');
+      return { success: true, user: profile };
+    }
+  } catch {}
   return { success: false, error: 'Invalid credentials' };
 };
 
@@ -200,9 +249,35 @@ export const signup = async (name: string, email: string, password: string): Pro
       return { success: true, user: profile };
     }
   } catch (e:any) {
+    // fall through to local creation below
+  }
+  // Local fallback creation
+  try {
+    const users = loadLocalUsers();
+    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      return { success: false, error: 'Email already registered locally' };
+    }
+    const pwHash = await hashPassword(password);
+    const local: LocalStoredUser = { id: crypto.randomUUID(), email, name, passwordHash: pwHash, createdAt: new Date().toISOString() };
+    users.push(local); saveLocalUsers(users);
+    const profile: User = {
+      id: local.id,
+      name,
+      email,
+      initials: name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
+      membershipType: 'Basic',
+      enrolledCourses: [],
+      completedCourses: [],
+      certificates: [],
+      ctfPoints: 0,
+      role: 'user'
+    };
+    storeUser(profile);
+    toastSuccess('Account created (local)', 'Stored locally.');
+    return { success: true, user: profile };
+  } catch (e:any) {
     return { success: false, error: e?.message || 'Signup failed' };
   }
-  return { success: false, error: 'Signup failed' };
 };
 
 export const logout = (): void => {
