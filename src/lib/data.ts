@@ -46,6 +46,8 @@ export interface User {
   disabled?: boolean; // soft-disable flag for admin control
 }
 
+import { mobileForensicsCurriculum } from './mobileForensicsModules';
+
 // Generate 500 diverse cybersecurity courses
 export const courses: Course[] = [
   // Original courses
@@ -246,32 +248,28 @@ export const courses: Course[] = [
   },
   {
     id: 'mobile-incident-response',
-    title: 'Mobile Incident Response & Evidence Handling',
-    description: 'Master rapid triage, volatile data preservation, evidence integrity, and cross-platform incident response playbooks for mobile ecosystems.',
+    title: 'Mobile Incident Response & Triage (Unified Track)',
+    description: '24-hour accelerated curriculum covering end-to-end mobile device security, forensics, response, and reporting.',
     level: 'Intermediate',
     price: '$59.99',
-    duration: '7 weeks',
+    duration: '24 hr',
     icon: 'lock',
     rating: 4.8,
     students: 1045,
     instructor: 'Marcus Lee',
-    topics: ['Live Triage', 'Artifact Timeline', 'Secure Imaging', 'Reporting Standards'],
+    topics: ['Acquisition', 'Analysis', 'App Assessment', 'Incident Response'],
     image: '/assets/courses/mobile-incident-response.jpg',
-    modules: [
-      { title: 'Incident Scoping & First Response', type: 'lesson', duration: '25m', content: 'Initial containment, prioritization, evidence volatility.' },
-      { title: 'Volatile Data Preservation', type: 'lesson', duration: '30m', content: 'Capturing ephemeral logs, sandbox states, secure transfers.' },
-      { title: 'Lab: Rapid Mobile Triage', type: 'lab', duration: '40m', content: 'Execute a structured triage checklist on a compromised device image.' },
-      { title: 'Artifact Timeline Construction', type: 'lesson', duration: '30m', content: 'Normalizing disparate timestamps, sequencing events.' },
-      { title: 'Lab: Timeline Correlation Exercise', type: 'lab', duration: '40m', content: 'Combine multiple artifact sources into coherent attack narrative.' },
-      { title: 'Secure Imaging & Integrity', type: 'lesson', duration: '25m', content: 'Hashing, verification, chain-of-custody updates.' },
-      { title: 'Quiz: Triage & Preservation', type: 'quiz' },
-      { title: 'Reporting Standards & Handoff', type: 'lesson', duration: '25m', content: 'Structuring executive & technical summaries, maintaining defensibility.' }
-    ]
+    modules: mobileForensicsCurriculum.map(m => ({
+      title: m.title,
+      type: 'lesson',
+      duration: '30m',
+      content: `Objectives: ${m.objectives.join('; ')}\n\n${m.content}\n\nLab Steps: ${m.lab.join(' | ')}\n\nQuiz: ${m.quiz.map(q=>q.q).join(' / ')}`
+    }))
   },
   {
     id: 'mobile-forensics-core',
-    title: 'Mobile Device Security & Forensics',
-    description: 'Comprehensive, accelerated 24-hour track covering deeper mobile OS internals, acquisition strategies, artifact analysis, secure app assessment, incident triage, and reporting—includes hands-on labs & quizzes.',
+    title: 'Mobile Device Security & Forensics (Unified Track)',
+    description: 'Unified 20-module curriculum delivering deep mobile OS internals, acquisition, analysis, assessment, incident response & reporting.',
     level: 'Intermediate',
     price: '$15.00',
     duration: '24 hr',
@@ -279,32 +277,14 @@ export const courses: Course[] = [
     rating: 4.8,
     students: 0,
     instructor: 'Elena Martinez',
-    topics: [
-      'Android Internals', 'iOS Security Architecture', 'Acquisition (Logical & File-System)', 'Cloud Artifact Correlation', 'Secure App Assessment',
-      'Encryption & Keychains', 'Artifact Timeline Reconstruction', 'Messaging & Chat App Artifacts', 'Mobile Malware Indicators', 'Reporting & Chain of Custody'
-    ],
+    topics: ['OS Internals', 'Acquisition', 'Artifact Analysis', 'Malware & Incident Response'],
     image: '/assets/courses/mobile-forensics-core.jpg',
-    modules: [
-  { title: 'Orientation & Environment Setup', type: 'lesson', duration: '30m', content: 'Course structure, toolchain installation, safe lab baseline.' },
-  { title: 'Mobile OS Architecture Deep Dive (Android/iOS)', type: 'lesson', duration: '1h', content: 'Kernel layers, system services, app lifecycle, security boundaries.' },
-  { title: 'Security Models & Sandboxing', type: 'lesson', duration: '45m', content: 'Permission mediation, sandbox isolation, inter-process communication controls.' },
-  { title: 'Acquisition Methods Overview', type: 'lesson', duration: '45m', content: 'Logical, file-system, physical, selective extraction trade-offs.' },
-  { title: 'Lab: Logical Acquisition & Hash Verification', type: 'lab', duration: '1h', content: 'Extract a logical image, compute hashes, validate integrity.' },
-  { title: 'File-System & Advanced Extraction Techniques', type: 'lesson', duration: '1h', content: 'Full file-system, agent-based, exploit-assisted approaches.' },
-  { title: 'Encrypted Containers & Keychain / Keystore', type: 'lesson', duration: '45m', content: 'Key derivation, secure element, escrow services, extraction challenges.' },
-  { title: 'Lab: Decrypting & Parsing Encrypted Backups', type: 'lab', duration: '1h', content: 'Use provided passphrase to decrypt and parse backup metadata + artifacts.' },
-  { title: 'Artifact Categories (Apps, Logs, Caches)', type: 'lesson', duration: '40m', content: 'Categorizing volatile vs persistent data; log source triage.' },
-  { title: 'Messaging & Secure Chat Artifacts (Signal, WhatsApp)', type: 'lesson', duration: '50m', content: 'Database schema, attachments, ephemeral message remnants.' },
-  { title: 'Lab: Chat Database & Attachment Recovery', type: 'lab', duration: '1h', content: 'Recover deleted records & associated media from WAL + freelist.' },
-  { title: 'SQLite, WAL & Journal Forensics', type: 'lesson', duration: '40m', content: 'Row formats, freelist, WAL sequences, journal carving tactics.' },
-  { title: 'Quiz: Core Acquisition & Artifacts', type: 'quiz' },
-  { title: 'Mobile Malware & Persistence Indicators', type: 'lesson', duration: '45m', content: 'Startup hooks, binary modifications, abnormal permission usage.' },
-  { title: 'Lab: Static & Dynamic Indicators Hunt', type: 'lab', duration: '1h', content: 'Identify persistence & C2 patterns using static and behavioral traces.' },
-  { title: 'Timeline Reconstruction & Correlation', type: 'lesson', duration: '45m', content: 'Unifying multi-source timestamps; resolving time skews & gaps.' },
-  { title: 'Incident Triage Playbook (Rapid Response)', type: 'lesson', duration: '30m', content: 'Prioritized checklist for fast containment & artifact capture.' },
-  { title: 'Quiz: Incident & Malware Analysis', type: 'quiz' },
-  { title: 'Reporting, Documentation & Chain of Custody', type: 'lesson', duration: '30m', content: 'High-integrity note taking, versioned evidence logs, executive summaries.' }
-    ]
+    modules: mobileForensicsCurriculum.map(m => ({
+      title: m.title,
+      type: 'lesson',
+      duration: '30m',
+      content: `Objectives: ${m.objectives.join('; ')}\n\n${m.content}\n\nLab Steps: ${m.lab.join(' | ')}\n\nQuiz: ${m.quiz.map(q=>q.q).join(' / ')}`
+    }))
   },
   // Generate 494 additional courses
   ...Array.from({ length: 494 }, (_, index) => {
