@@ -18,6 +18,7 @@ import NotFound from './pages/NotFound';
 import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
 import CoursePlayer from './pages/CoursePlayer';
+import AdminHotkeyListener from '@/components/AdminHotkeyListener';
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => {
         <Toaster />
   <BrowserRouter basename={import.meta.env.BASE_URL}>
           <div className="min-h-screen flex flex-col">
+            <AdminHotkeyListener />
             <Navbar />
             <main className="flex-1">
               <Routes>
