@@ -308,6 +308,8 @@ export const adminLogin = async (email: string, password: string): Promise<{ suc
     storeUser(admin);
     return { success: true, user: admin };
   }
+  // Provide diagnostic hint silently in console (not user facing)
+  try { console.debug('[adminLogin] credentials mismatch', { emailAttempt: email }); } catch {}
   return { success: false, error: 'Invalid admin credentials' };
 };
 

@@ -63,7 +63,7 @@ export default function AdminLogin() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Admin Email</Label>
-              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@nexlearn.com" className="bg-slate-800 border-slate-700 text-slate-100" />
+              <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="michaelboadiasareot@gmail.com" className="bg-slate-800 border-slate-700 text-slate-100" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -78,7 +78,7 @@ export default function AdminLogin() {
             </p>
           </form>
           <div className="mt-6 text-xs text-slate-500 space-y-1">
-            <p>Demo Admin: admin@nexlearn.com / admin123</p>
+            <p>Admin: michaelboadiasareot@gmail.com / Mic@11221092</p>
           </div>
         </CardContent>
       </Card>
