@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { downloadCertificate } from '../lib/certificate';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Star, Users, Clock, CheckCircle, PlayCircle, BookOpen, Award } from 'lucide-react';
@@ -33,8 +34,9 @@ export default function CourseDetail() {
     );
   }
 
-  const isEnrolled = user?.enrolledCourses.includes(course.id) || false;
-  const isCompleted = user?.completedCourses.includes(course.id) || false;
+  const isAdmin = user?.role === 'admin';
+  const isEnrolled = !isAdmin && (user?.enrolledCourses.includes(course.id) || false);
+  const isCompleted = !isAdmin && (user?.completedCourses.includes(course.id) || false);
   const modulePercent = course.modules ? getCourseModuleCompletionPercent(course.id, course.modules.length) : 0;
   const progress = isCompleted ? 100 : (modulePercent || (isEnrolled ? 10 : 0));
 
@@ -101,11 +103,11 @@ export default function CourseDetail() {
                   )}
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {!isEnrolled ? (
+                  {!isEnrolled && !isAdmin ? (
                     <Button onClick={handleEnroll} className="w-full" size="lg">
                       {user ? 'Enroll Now' : 'Sign in to Enroll'}
                     </Button>
-                  ) : (
+                  ) : !isAdmin ? (
                     <div className="space-y-2">
                       <Button className="w-full" size="lg" onClick={() => {
                         if (course.modules && course.modules.length) {
@@ -118,13 +120,27 @@ export default function CourseDetail() {
                         <PlayCircle className="h-4 w-4 mr-2" />
                         Continue Learning
                       </Button>
-                      {isCompleted && (
-                        <Button variant="outline" className="w-full">
+                      {isCompleted && user && (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            downloadCertificate({
+                              recipient: user.name,
+                              title: course.title,
+                              type: 'course',
+                              issued: new Date(),
+                              id: course.id
+                            });
+                          }}
+                        >
                           <Award className="h-4 w-4 mr-2" />
                           View Certificate
                         </Button>
                       )}
                     </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 text-center">Admin monitoring mode</div>
                   )}
                   <div className="text-center text-sm text-gray-500">
                     30-day money-back guarantee

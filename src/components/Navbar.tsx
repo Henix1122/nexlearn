@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, Home, BookOpen, Flag, Award, Info, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Menu, Home, BookOpen, Flag, Award, Info, LayoutDashboard, Settings, LogOut, Shield } from 'lucide-react';
 import { getStoredUser, logout } from '@/lib/auth';
 import { User } from '@/lib/data';
 
@@ -111,6 +111,14 @@ export default function Navbar() {
                       Settings
                     </Link>
                   </DropdownMenuItem>
+                  {user?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/capabilities" className="flex items-center">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Admin Capabilities
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
@@ -162,6 +170,16 @@ export default function Navbar() {
                         <LayoutDashboard className="h-5 w-5" />
                         <span>Dashboard</span>
                       </Link>
+                      {user.role === 'admin' && (
+                        <Link
+                          to="/admin/capabilities"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors"
+                        >
+                          <Shield className="h-5 w-5" />
+                          <span>Admin Capabilities</span>
+                        </Link>
+                      )}
                       <Button
                         variant="ghost"
                         onClick={() => {

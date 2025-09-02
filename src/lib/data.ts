@@ -43,6 +43,7 @@ export interface User {
   role?: 'admin' | 'user';
   learningPaths?: string[]; // enrolled learning path IDs
   pathCertificates?: string[]; // completed learning path IDs for certificate
+  disabled?: boolean; // soft-disable flag for admin control
 }
 
 // Generate 500 diverse cybersecurity courses
@@ -554,10 +555,10 @@ export const courses: Course[] = [
     const topicSet = topics[index % topics.length];
 
     const modules = [
-      { title: `${title}: Introduction`, type: 'lesson', duration: '20m', content: `Overview of ${title.toLowerCase()} objectives, scope, and learning outcomes.` },
-      ...topicSet.map(t => ({ title: t, type: 'lesson' as const, duration: '30m', content: `Deep dive into ${t.toLowerCase()} concepts as applied to ${title.toLowerCase()}.` })),
-      { title: 'Hands-on Lab', type: 'lab', duration: '40m', content: `Practical application of ${title.toLowerCase()} skills in a guided scenario.` },
-      { title: 'Quiz: Core Concepts', type: 'quiz' }
+      { title: `${title}: Introduction`, type: 'lesson' as const, duration: '20m', content: `Overview of ${title.toLowerCase()} objectives, scope, and learning outcomes.` },
+  ...topicSet.map(t => ({ title: t, type: 'lesson' as const, duration: '30m', content: `Deep dive into ${t.toLowerCase()} concepts as applied to ${title.toLowerCase()}.` })),
+  { title: 'Hands-on Lab', type: 'lab' as const, duration: '40m', content: `Practical application of ${title.toLowerCase()} skills in a guided scenario.` },
+  { title: 'Quiz: Core Concepts', type: 'quiz' as const }
     ];
     return {
       id: courseId,

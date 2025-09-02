@@ -17,6 +17,7 @@ import Membership from './pages/Membership';
 import NotFound from './pages/NotFound';
 import About from './pages/About';
 import AdminLogin from './pages/AdminLogin';
+import AdminCapabilities from './pages/AdminCapabilities';
 import CoursePlayer from './pages/CoursePlayer';
 import Settings from './pages/Settings';
 import AdminHotkeyListener from '@/components/AdminHotkeyListener';
@@ -55,6 +56,7 @@ const App = () => {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin/capabilities" element={<AdminCapabilities />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
