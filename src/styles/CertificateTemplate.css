@@ -1,0 +1,55 @@
+.certificate-container {
+  width: 1000px;
+  background-color: #0d0f1a;
+  color: #fff;
+  padding: 40px;
+  position: relative;
+  font-family: 'Segoe UI', sans-serif;
+  border: 2px solid #ff6600;
+  box-shadow: 0 0 20px rgba(255,102,0,0.3);
+}
+
+.certificate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.platform-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff6600;
+  letter-spacing: 1px;
+}
+
+.level-info { display:flex; flex-direction:column; text-align:right; }
+.level-text { font-size:14px; letter-spacing:1px; }
+.cert-title { font-size:18px; font-weight:bold; }
+
+.certificate-body { margin-top:40px; text-align:left; }
+.main-title { font-size:26px; font-weight:bold; margin-bottom:10px; }
+.gradient-line { height:3px; background:linear-gradient(to right, yellow, red, orange); margin:15px 0; }
+.certify-text { font-size:16px; }
+.recipient-name { font-size:28px; font-weight:bold; margin:10px 0; }
+.effective-date { font-size:16px; }
+.signature-block { margin-top:30px; }
+.signature { height:50px; }
+.signer-name { font-size:14px; }
+
+.certificate-footer { margin-top:40px; font-size:12px; display:flex; justify-content:space-between; }
+.cert-id { font-size:12px; }
+
+.geometric-design {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  width: 200px;
+  height: 200px;
+  border: 2px solid orange;
+  transform: rotate(45deg);
+  border-color: orange red red orange;
+}
+
+@media print {
+  .certificate-container { box-shadow:none; }
+}
