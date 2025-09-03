@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// WARNING: These public anon keys can be exposed in client apps; restrict policies on the backend.
-const SUPABASE_URL = 'https://hqltevcnumxqokfzssvq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxbHRldmNudW14cW9rZnpzc3ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MjI0MDAsImV4cCI6MjA3MjM5ODQwMH0.wvUfy1z-Vej94eNa7ZvrpS1vpdlJFbYtBjm8auZPyCo';
+// Environment-based configuration. NEVER commit real keys. Rotate leaked keys immediately.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  // Provide a runtime diagnostic (non-blocking) without crashing build.
+  // eslint-disable-next-line no-console
+  console.warn('[supabaseClient] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables. Supabase features may not work.');
+}
+
+export const supabase = createClient(SUPABASE_URL || 'http://localhost:54321', SUPABASE_ANON_KEY || 'public-anon-key', {
   auth: { persistSession: true },
 });
 
