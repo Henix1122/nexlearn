@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { computeCertificateHash, findLocalCertificate, validateCertificateRemote } from '@/lib/certificate';
+import { computeCertificateHash, findLocalCertificate, verifyCertificateRemote } from '@/lib/certificate';
 
 const VerifyCertificate: React.FC = () => {
   const [recipient, setRecipient] = useState('');
@@ -10,7 +10,7 @@ const VerifyCertificate: React.FC = () => {
   const [issued, setIssued] = useState('');
   const [idOrHash, setIdOrHash] = useState('');
   const [result, setResult] = useState<string | null>(null);
-  const [remoteStatus, setRemoteStatus] = useState<string | null>(null);
+  const [checkingRemote, setCheckingRemote] = useState(false);
 
   const handleLocalLookup = () => {
     const rec = findLocalCertificate(idOrHash.trim());
@@ -39,7 +39,10 @@ const VerifyCertificate: React.FC = () => {
         <div>
           <label className="block text-sm font-medium mb-1">Certificate ID or Hash</label>
           <Input value={idOrHash} onChange={e=>setIdOrHash(e.target.value)} placeholder="Paste ID or hash" />
-          <Button className="mt-2" variant="secondary" onClick={handleLocalLookup}>Lookup Local Record</Button>
+          <div className="flex gap-2 mt-2 flex-wrap">
+            <Button variant="secondary" onClick={handleLocalLookup}>Local Lookup</Button>
+            <Button disabled={!idOrHash || checkingRemote} onClick={async ()=>{ setCheckingRemote(true); const r = await verifyCertificateRemote(idOrHash.trim()); setCheckingRemote(false); if (r.status==='valid') setResult(`VALID (Remote) — Hash: ${r.record.hash} — Recipient: ${r.record.user_name || r.record.recipient} — Title: ${r.record.title} — Issued: ${r.record.issued}`); else if (r.status==='not_found') setResult('No remote record found.'); else setResult('Remote verification error: ' + r.error); }}>Remote Verify</Button>
+          </div>
         </div>
         <hr />
         <div className="grid md:grid-cols-2 gap-4">
@@ -64,12 +67,6 @@ const VerifyCertificate: React.FC = () => {
           </div>
         </div>
         <Button onClick={handleRecompute}>Recompute Hash</Button>
-        <div className="pt-4 border-t">
-          <h2 className="text-lg font-semibold mb-2">Remote Validation</h2>
-          <p className="text-xs text-gray-500 mb-2">Checks against server-side certificate store (Supabase).</p>
-          <Button variant="outline" onClick={async () => { setRemoteStatus('Validating...'); const res = await validateCertificateRemote(idOrHash.trim()); setRemoteStatus(res.valid ? `VALID (Remote) — Hash: ${res.record.hash}` : `INVALID: ${res.reason}`); }}>Validate Remote</Button>
-          {remoteStatus && <div className="mt-2 text-sm" data-testid="remote-status">{remoteStatus}</div>}
-        </div>
       </div>
       {result && (
         <div className="p-4 rounded bg-gray-100 text-sm whitespace-pre-wrap">{result}</div>

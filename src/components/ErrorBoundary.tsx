@@ -1,5 +1,6 @@
 import React from 'react';
-import { logClientError } from '@/lib/logger';
+import { toast } from '@/components/ui/sonner';
+import { logError } from '@/lib/logger';
 
 interface ErrorBoundaryState { error: Error | null }
 interface ErrorBoundaryProps { children: React.ReactNode }
@@ -12,7 +13,8 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   async componentDidCatch(error: Error, info: React.ErrorInfo) {
-  logClientError(error, { componentStack: info.componentStack });
+  toast('An error occurred', { description: 'We logged it for review.' });
+  logError('react_error_boundary', { message: error.message, stack: error.stack, componentStack: info.componentStack });
   }
 
   render() {

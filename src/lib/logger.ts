@@ -1,53 +1,58 @@
-import { toast } from '@/components/ui/sonner';
-
-interface ClientLogRecord {
-  id: string;
-  level: 'error' | 'warn' | 'info';
-  message: string;
-  stack?: string;
-  context?: any;
-  ts: string;
+interface LogEvent {
+	level: 'error' | 'warn' | 'info';
+	message: string;
+	meta?: any;
+	ts: string;
 }
 
-const BUFFER_KEY = 'nex_error_buffer';
+const BUFFER_KEY = 'nex_log_buffer';
 const MAX_BUFFER = 100;
 
-function loadBuffer(): ClientLogRecord[] { try { return JSON.parse(localStorage.getItem(BUFFER_KEY) || '[]'); } catch { return []; } }
-function saveBuffer(arr: ClientLogRecord[]) { try { localStorage.setItem(BUFFER_KEY, JSON.stringify(arr.slice(-MAX_BUFFER))); } catch {} }
+function loadBuffer(): LogEvent[] { try { return JSON.parse(localStorage.getItem(BUFFER_KEY) || '[]'); } catch { return []; } }
+function saveBuffer(arr: LogEvent[]) { try { localStorage.setItem(BUFFER_KEY, JSON.stringify(arr.slice(-MAX_BUFFER))); } catch {} }
 
-export function logClientError(err: Error, context?: any) {
-  toast('An error occurred', { description: err.message });
-  const rec: ClientLogRecord = { id: crypto.randomUUID(), level: 'error', message: err.message, stack: err.stack, context, ts: new Date().toISOString() };
-  const buf = loadBuffer();
-  buf.push(rec); saveBuffer(buf);
-  flushErrors();
+export function logEvent(level: LogEvent['level'], message: string, meta?: any) {
+	const entry: LogEvent = { level, message, meta, ts: new Date().toISOString() };
+	const buf = loadBuffer();
+	buf.push(entry); saveBuffer(buf);
+	if (level === 'error') scheduleFlush(1500); // quick flush after error
 }
 
 let flushing = false;
-export async function flushErrors() {
-  if (flushing) return; flushing = true;
-  try {
-    const buf = loadBuffer();
-    if (!buf.length) return;
-    const { supabase } = await import('./supabaseClient');
-    // @ts-ignore
-    const payload = buf.map(r => ({ id: r.id, level: r.level, message: r.message, stack: r.stack, context: JSON.stringify(r.context||null), ts: r.ts }));
-    // @ts-ignore
-    const { error } = await supabase.from('client_errors').upsert(payload);
-    if (!error) {
-      saveBuffer([]); // clear
-    }
-  } catch {
-    // keep buffer
-  } finally {
-    flushing = false;
-  }
+let flushTimer: any;
+
+function scheduleFlush(delay = 5000) {
+	if (flushTimer) clearTimeout(flushTimer);
+	flushTimer = setTimeout(() => flushLogs(), delay);
 }
 
-// Initialize periodic + online flush listeners
-export function initClientLogging() {
-  try {
-    window.addEventListener('online', () => flushErrors());
-    setInterval(() => flushErrors(), 15000);
-  } catch {}
+export async function flushLogs() {
+	if (flushing) return; flushing = true;
+	const buf = loadBuffer();
+	if (!buf.length) { flushing = false; return; }
+	try {
+		const { supabase } = await import('./supabaseClient');
+		// @ts-ignore
+		const payload = buf.map(b => ({ level: b.level, message: b.message, meta: JSON.stringify(b.meta || {}), ts: b.ts }));
+		// @ts-ignore
+		const { error } = await supabase.from('client_logs').insert(payload);
+		if (!error) {
+			saveBuffer([]); // clear
+		}
+	} catch {
+		// leave buffer intact
+	} finally {
+		flushing = false;
+	}
 }
+
+// Periodic & online flush
+if (typeof window !== 'undefined') {
+	setInterval(() => flushLogs(), 20000);
+	window.addEventListener('online', () => flushLogs());
+}
+
+// Convenience wrappers
+export const logError = (msg: string, meta?: any) => logEvent('error', msg, meta);
+export const logWarn = (msg: string, meta?: any) => logEvent('warn', msg, meta);
+export const logInfo = (msg: string, meta?: any) => logEvent('info', msg, meta);
