@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { computeCertificateHash, findLocalCertificate, verifyCertificateRemote } from '@/lib/certificate';
+import useCertificateVerification from '@/hooks/useCertificateVerification';
 
 const VerifyCertificate: React.FC = () => {
   const [recipient, setRecipient] = useState('');
@@ -9,27 +9,10 @@ const VerifyCertificate: React.FC = () => {
   const [type, setType] = useState<'course' | 'learning-path'>('course');
   const [issued, setIssued] = useState('');
   const [idOrHash, setIdOrHash] = useState('');
-  const [result, setResult] = useState<string | null>(null);
-  const [checkingRemote, setCheckingRemote] = useState(false);
+  const { state, localLookup, recompute, remoteVerify } = useCertificateVerification();
 
-  const handleLocalLookup = () => {
-    const rec = findLocalCertificate(idOrHash.trim());
-    if (rec) {
-      setResult(`VALID (Local) — Hash: ${rec.hash} — Recipient: ${rec.recipient} — Title: ${rec.title} — Issued: ${rec.issued}`);
-    } else {
-      setResult('No local record found for that ID or hash.');
-    }
-  };
-
-  const handleRecompute = async () => {
-    try {
-      if (!recipient || !title || !issued) { setResult('Provide recipient, title, issued date.'); return; }
-      const hash = await computeCertificateHash({ recipient, title, type, issued: new Date(issued), id: idOrHash || undefined });
-      setResult(`Recomputed Hash: ${hash}`);
-    } catch (e:any) {
-      setResult('Error computing hash');
-    }
-  };
+  const handleLocalLookup = () => localLookup(idOrHash);
+  const handleRecompute = () => recompute({ recipient, title, type, issued, idOrHash });
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -41,7 +24,7 @@ const VerifyCertificate: React.FC = () => {
           <Input value={idOrHash} onChange={e=>setIdOrHash(e.target.value)} placeholder="Paste ID or hash" />
           <div className="flex gap-2 mt-2 flex-wrap">
             <Button variant="secondary" onClick={handleLocalLookup}>Local Lookup</Button>
-            <Button disabled={!idOrHash || checkingRemote} onClick={async ()=>{ setCheckingRemote(true); const r = await verifyCertificateRemote(idOrHash.trim()); setCheckingRemote(false); if (r.status==='valid') setResult(`VALID (Remote) — Hash: ${r.record.hash} — Recipient: ${r.record.user_name || r.record.recipient} — Title: ${r.record.title} — Issued: ${r.record.issued}`); else if (r.status==='not_found') setResult('No remote record found.'); else setResult('Remote verification error: ' + r.error); }}>Remote Verify</Button>
+            <Button disabled={!idOrHash || state.loading} onClick={()=>remoteVerify(idOrHash)}>Remote Verify</Button>
           </div>
         </div>
         <hr />
@@ -66,11 +49,11 @@ const VerifyCertificate: React.FC = () => {
             <Input type="date" value={issued} onChange={e=>setIssued(e.target.value)} />
           </div>
         </div>
-        <Button onClick={handleRecompute}>Recompute Hash</Button>
+        <Button disabled={state.loading} onClick={handleRecompute}>Recompute Hash</Button>
       </div>
-      {result && (
-        <div className="p-4 rounded bg-gray-100 text-sm whitespace-pre-wrap">{result}</div>
-      )}
+      {state.error && <div className="p-3 rounded bg-red-100 text-red-700 text-sm">{state.error}</div>}
+      {state.status && <div className="p-4 rounded bg-gray-100 text-sm whitespace-pre-wrap">{state.status}</div>}
+      {state.loading && <div className="text-sm text-gray-500">Processing...</div>}
     </div>
   );
 };
