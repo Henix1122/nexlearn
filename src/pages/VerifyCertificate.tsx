@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { computeCertificateHash, findLocalCertificate } from '@/lib/certificate';
+import { computeCertificateHash, findLocalCertificate, validateCertificateRemote } from '@/lib/certificate';
 
 const VerifyCertificate: React.FC = () => {
   const [recipient, setRecipient] = useState('');
@@ -10,6 +10,7 @@ const VerifyCertificate: React.FC = () => {
   const [issued, setIssued] = useState('');
   const [idOrHash, setIdOrHash] = useState('');
   const [result, setResult] = useState<string | null>(null);
+  const [remoteStatus, setRemoteStatus] = useState<string | null>(null);
 
   const handleLocalLookup = () => {
     const rec = findLocalCertificate(idOrHash.trim());
@@ -63,6 +64,12 @@ const VerifyCertificate: React.FC = () => {
           </div>
         </div>
         <Button onClick={handleRecompute}>Recompute Hash</Button>
+        <div className="pt-4 border-t">
+          <h2 className="text-lg font-semibold mb-2">Remote Validation</h2>
+          <p className="text-xs text-gray-500 mb-2">Checks against server-side certificate store (Supabase).</p>
+          <Button variant="outline" onClick={async () => { setRemoteStatus('Validating...'); const res = await validateCertificateRemote(idOrHash.trim()); setRemoteStatus(res.valid ? `VALID (Remote) — Hash: ${res.record.hash}` : `INVALID: ${res.reason}`); }}>Validate Remote</Button>
+          {remoteStatus && <div className="mt-2 text-sm" data-testid="remote-status">{remoteStatus}</div>}
+        </div>
       </div>
       {result && (
         <div className="p-4 rounded bg-gray-100 text-sm whitespace-pre-wrap">{result}</div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { toast } from '@/components/ui/sonner';
+import { logClientError } from '@/lib/logger';
 
 interface ErrorBoundaryState { error: Error | null }
 interface ErrorBoundaryProps { children: React.ReactNode }
@@ -12,21 +12,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   async componentDidCatch(error: Error, info: React.ErrorInfo) {
-    toast('An error occurred', { description: 'We logged it for review.' });
-    // Attempt remote logging (Supabase) with local fallback buffer
-    try {
-      const payload = { message: error.message, stack: error.stack, componentStack: info.componentStack, ts: new Date().toISOString() };
-      const bufferKey = 'nex_error_buffer';
-      const pushLocal = () => {
-        try { const arr = JSON.parse(localStorage.getItem(bufferKey) || '[]'); arr.push(payload); localStorage.setItem(bufferKey, JSON.stringify(arr.slice(-50))); } catch {}
-      };
-      const { supabase } = await import('@/lib/supabaseClient');
-      // @ts-ignore
-      const { error: supErr } = await supabase.from('client_errors').insert({ message: payload.message, stack: payload.stack, component_stack: payload.componentStack, ts: payload.ts });
-      if (supErr) pushLocal();
-    } catch {
-      // local fallback
-    }
+  logClientError(error, { componentStack: info.componentStack });
   }
 
   render() {

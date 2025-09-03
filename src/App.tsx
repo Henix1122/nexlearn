@@ -24,6 +24,7 @@ import Settings from './pages/Settings';
 import AdminHotkeyListener from '@/components/AdminHotkeyListener';
 import VerifyCertificate from './pages/VerifyCertificate';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { initClientLogging } from '@/lib/logger';
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => {
       if (detail?.title) toast(detail.title, { description: detail.description });
     };
     window.addEventListener('app:toast', handler as any);
+    initClientLogging();
     return () => window.removeEventListener('app:toast', handler as any);
   }, []);
 

@@ -70,6 +70,29 @@ export function findLocalCertificate(idOrHash: string): StoredCertificateRecord 
   return store.find(r => r.id === idOrHash || r.hash === idOrHash);
 }
 
+export async function validateCertificateRemote(idOrHash: string): Promise<{ valid: boolean; record?: any; reason?: string }> {
+  try {
+    const { supabase } = await import('./supabaseClient');
+    // Try by id first
+    // @ts-ignore
+    let { data, error } = await supabase.from('certificates').select('*').eq('id', idOrHash).limit(1);
+    if (error) return { valid: false, reason: error.message };
+    if (!data || data.length === 0) {
+      // Try by hash
+      // @ts-ignore
+      const res2 = await supabase.from('certificates').select('*').eq('hash', idOrHash).limit(1);
+      if (res2.error) return { valid: false, reason: res2.error.message };
+      data = res2.data;
+    }
+    if (data && data.length > 0) {
+      return { valid: true, record: data[0] };
+    }
+    return { valid: false, reason: 'Not found' };
+  } catch (e: any) {
+    return { valid: false, reason: e?.message || 'Validation error' };
+  }
+}
+
 export async function generateCertificatePDF(opts: CertificateOptions): Promise<Blob> {
   const jsPDF = await getJsPDF();
   const hash = await computeCertificateHash(opts);
