@@ -2,6 +2,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useEffect } from 'react';
 import { toast } from '@/components/ui/sonner';
 import Navbar from '@/components/Navbar';
@@ -49,14 +50,14 @@ const App = () => {
                 <Route path="/courses/:id" element={<CourseDetail />} />
                 <Route path="/course-player/:id/:moduleIndex" element={<CoursePlayer />} />
                 <Route path="/ctf" element={<CTF />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/membership" element={<Membership />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/about" element={<About />} />
                 <Route path="/admin" element={<AdminLogin />} />
-                <Route path="/admin/capabilities" element={<AdminCapabilities />} />
+                <Route path="/admin/capabilities" element={<ProtectedRoute role="admin"><AdminCapabilities /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
