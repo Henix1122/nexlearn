@@ -19,6 +19,7 @@ const footerLinks = {
     { name: 'Careers', href: '#' },
     { name: 'Privacy', href: '#' },
     { name: 'Terms', href: '#' },
+  { name: 'Verify Certificate', href: '/verify' },
   ],
   support: [
     { name: 'Contact Us', href: '#' },

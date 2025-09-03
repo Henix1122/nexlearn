@@ -22,6 +22,8 @@ import AdminCapabilities from './pages/AdminCapabilities';
 import CoursePlayer from './pages/CoursePlayer';
 import Settings from './pages/Settings';
 import AdminHotkeyListener from '@/components/AdminHotkeyListener';
+import VerifyCertificate from './pages/VerifyCertificate';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -40,7 +42,8 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
   <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <div className="min-h-screen flex flex-col">
+          <ErrorBoundary>
+            <div className="min-h-screen flex flex-col">
             <AdminHotkeyListener />
             <Navbar />
             <main className="flex-1">
@@ -56,13 +59,15 @@ const App = () => {
                 <Route path="/membership" element={<Membership />} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/about" element={<About />} />
+                <Route path="/verify" element={<VerifyCertificate />} />
                 <Route path="/admin" element={<AdminLogin />} />
                 <Route path="/admin/capabilities" element={<ProtectedRoute role="admin"><AdminCapabilities /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footer />
-          </div>
+            </div>
+          </ErrorBoundary>
   </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

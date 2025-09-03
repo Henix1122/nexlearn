@@ -36,6 +36,40 @@ async function computeCertificateHash(opts: CertificateOptions): Promise<string>
   }
 }
 
+export { computeCertificateHash }; // allow verification page to reuse
+
+export interface StoredCertificateRecord {
+  id: string; // derived id or provided opts.id
+  recipient: string;
+  title: string;
+  type: 'course' | 'learning-path';
+  issued: string; // ISO
+  hash: string; // first 12 chars
+}
+
+const CERT_STORE_KEY = 'nex_certificates';
+function loadCertStore(): StoredCertificateRecord[] { try { return JSON.parse(localStorage.getItem(CERT_STORE_KEY) || '[]'); } catch { return []; } }
+function saveCertStore(recs: StoredCertificateRecord[]) { try { localStorage.setItem(CERT_STORE_KEY, JSON.stringify(recs)); } catch {} }
+
+export async function issueCertificate(opts: CertificateOptions): Promise<StoredCertificateRecord> {
+  const hash = await computeCertificateHash(opts);
+  const rec: StoredCertificateRecord = { id: opts.id || hash, recipient: opts.recipient, title: opts.title, type: opts.type, issued: opts.issued.toISOString(), hash };
+  const store = loadCertStore();
+  if (!store.find(r => r.id === rec.id)) { store.push(rec); saveCertStore(store); }
+  // Attempt Supabase persistence (best-effort)
+  try {
+    const { supabase } = await import('./supabaseClient');
+    // @ts-ignore
+    await supabase.from('certificates').upsert({ id: rec.id, user_name: rec.recipient, title: rec.title, type: rec.type, issued: rec.issued, hash: rec.hash });
+  } catch {}
+  return rec;
+}
+
+export function findLocalCertificate(idOrHash: string): StoredCertificateRecord | undefined {
+  const store = loadCertStore();
+  return store.find(r => r.id === idOrHash || r.hash === idOrHash);
+}
+
 export async function generateCertificatePDF(opts: CertificateOptions): Promise<Blob> {
   const jsPDF = await getJsPDF();
   const hash = await computeCertificateHash(opts);
@@ -62,6 +96,7 @@ export async function generateCertificatePDF(opts: CertificateOptions): Promise<
 
 export async function downloadCertificate(opts: CertificateOptions) {
   try {
+  await issueCertificate(opts);
     const blob = await generateCertificatePDF(opts);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
