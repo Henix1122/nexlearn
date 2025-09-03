@@ -22,8 +22,23 @@ export interface CertificateOptions {
   id?: string; // courseId or pathId
 }
 
+// Compute a short validation hash (first 12 chars of SHA-256) over stable certificate fields
+async function computeCertificateHash(opts: CertificateOptions): Promise<string> {
+  const base = [opts.recipient, opts.title, opts.type, opts.issued.toISOString(), opts.id || ''].join('|');
+  try {
+    const data = new TextEncoder().encode(base);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+    return hex.slice(0,12).toUpperCase();
+  } catch {
+    let h = 0; for (let i=0;i<base.length;i++){ h = Math.imul(31, h) + base.charCodeAt(i) | 0; }
+    return ('FALLBACK' + (h>>>0).toString(16)).slice(0,12).toUpperCase();
+  }
+}
+
 export async function generateCertificatePDF(opts: CertificateOptions): Promise<Blob> {
   const jsPDF = await getJsPDF();
+  const hash = await computeCertificateHash(opts);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
   doc.setFillColor('#0f172a');
   doc.rect(0,0,842,595,'F');
@@ -41,7 +56,7 @@ export async function generateCertificatePDF(opts: CertificateOptions): Promise<
   doc.setFontSize(12);
   doc.text(`Issued: ${opts.issued.toLocaleDateString()}`, 421, 420, { align: 'center' });
   doc.setFontSize(10);
-  doc.text('NexLearn • Validation hash: DEMO-HASH', 421, 460, { align: 'center' });
+  doc.text(`NexLearn • Validation hash: ${hash}`, 421, 460, { align: 'center' });
   return doc.output('blob');
 }
 
