@@ -310,6 +310,8 @@ export const signup = async (name: string, email: string, password: string): Pro
   });
       storeUser(profile);
   savePersistedProfile(profile);
+  // Fire signup email (best effort)
+  try { fetch('/functions/v1/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: profile.email, user_id: profile.id, type: 'signup' }) }); } catch {}
       // Also persist local hashed credentials for offline login
       try {
         const users = loadLocalUsers();
@@ -403,6 +405,8 @@ export const enrollInCourse = (courseId: string): void => {
       try {
         const { error } = await supabase.from('enrollments').upsert({ user_id: user.id, course_id: courseId, enrolled_at: new Date().toISOString() });
         if (error) throw error;
+  // Send course started email
+  try { fetch('/functions/v1/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, user_id: user.id, type: 'course_started', course_id: courseId, course_title: courseId }) }); } catch {}
       } catch (e) {
         toastError('Enrollment pending sync', 'Working offline or server unreachable.');
   scheduleOp({ type: 'enrollment', payload: { user_id: user.id, course_id: courseId, enrolled_at: new Date().toISOString() }, courseId });
@@ -419,7 +423,40 @@ export const completeCourse = (courseId: string): void => {
   if (!user.certificates.includes(courseId)) user.certificates.push(courseId);
     storeUser(user);
   savePersistedProfile(user);
+    // Attempt remote sync: mark completion + certificate
+    (async () => {
+      try {
+        const completed_at = new Date().toISOString();
+        const { error: enrErr } = await supabase.from('enrollments').upsert({ user_id: user.id, course_id: courseId, completed_at });
+        if (enrErr) throw enrErr;
+        // Upsert certificate row (best effort). Hash generation client-side might already have occurred in certificate module; here we store minimal placeholder if absent.
+        try {
+          const { error: certErr } = await supabase.from('certificates').upsert({ id: courseId, user_id: user.id, user_name: user.name, title: courseId, type: 'course', issued: completed_at, hash: 'PENDING' }, { onConflict: 'id' });
+          if (certErr) { /* ignore non-fatal */ }
+        } catch {}
+      } catch (e) {
+        scheduleOp({ type: 'completion', payload: { user_id: user.id, course_id: courseId, completed_at: new Date().toISOString() }, courseId });
+      }
+    })();
   }
+};
+
+// Increment CTF points both locally and remotely
+export const incrementCtfPoints = (points: number): void => {
+  if (points <= 0) return;
+  const user = getStoredUser();
+  if (!user) return;
+  user.ctfPoints = (user.ctfPoints || 0) + points;
+  storeUser(user);
+  savePersistedProfile(user);
+  (async () => {
+    try {
+      const { error } = await supabase.from('users').upsert({ id: user.id, ctf_points: user.ctfPoints }, { onConflict: 'id' });
+      if (error) throw error;
+    } catch (e) {
+      // Could add to queue if frequent; for now silent fallback
+    }
+  })();
 };
 
 // Module progress persistence (localStorage only)
@@ -502,6 +539,7 @@ export const syncAutoCompletion = (courseId: string, totalModules: number): void
         const { error } = await supabase.from('enrollments').upsert({ user_id: user.id, course_id: courseId, completed_at: new Date().toISOString() });
         if (error) throw error;
         toastSuccess('Course completed', 'Progress synced');
+  try { fetch('/functions/v1/send-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, user_id: user.id, type: 'course_completed', course_id: courseId, course_title: courseId }) }); } catch {}
       } catch {
         toastError('Completion saved locally', 'Will retry sync');
         scheduleOp({ type: 'completion', payload: { user_id: user.id, course_id: courseId, completed_at: new Date().toISOString() }, courseId });
@@ -560,6 +598,51 @@ export const getFirstIncompleteModuleIndex = (course: { id: string; modules?: { 
   return 0; // all done -> start at 0 for review
 };
 
+// Full sync helper: push any local-only progress/enrollments/certificates & ctf points
+export const syncAllToSupabase = async (): Promise<{ ok: boolean; errors: string[] }> => {
+  const user = getStoredUser();
+  if (!user) return { ok: false, errors: ['no_user'] };
+  const errs: string[] = [];
+  // Enrollments & completions
+  try {
+    for (const courseId of user.enrolledCourses) {
+      const completed_at = user.completedCourses.includes(courseId) ? new Date().toISOString() : null;
+      const { error } = await supabase.from('enrollments').upsert({ user_id: user.id, course_id: courseId, completed_at });
+      if (error) errs.push(`enroll:${courseId}:${error.message}`);
+    }
+  } catch (e:any) { errs.push(`enroll_batch:${e?.message||'err'}`); }
+  // Module progress
+  try {
+    const mp = getModuleProgress();
+    const userCourses = mp[user.id] || {};
+    for (const [courseId, rec] of Object.entries(userCourses)) {
+      for (const mod of rec.completed) {
+        const { error } = await supabase.from('module_progress').upsert({ user_id: user.id, course_id: courseId, module_title: mod, completed_at: new Date().toISOString() });
+        if (error) errs.push(`module:${courseId}:${mod}:${error.message}`);
+      }
+    }
+  } catch (e:any) { errs.push(`modules_batch:${e?.message||'err'}`); }
+  // Certificates (best-effort; rely on certificate module local store)
+  try {
+    const raw = localStorage.getItem('nex_certificates');
+    if (raw) {
+      const certs = JSON.parse(raw);
+      for (const c of certs) {
+        if (c && c.id) {
+          const { error } = await supabase.from('certificates').upsert({ id: c.id, user_id: user.id, user_name: c.recipient, title: c.title, type: c.type, issued: c.issued, hash: c.hash });
+          if (error) errs.push(`cert:${c.id}:${error.message}`);
+        }
+      }
+    }
+  } catch (e:any) { errs.push(`cert_batch:${e?.message||'err'}`); }
+  // CTF points
+  try {
+    const { error } = await supabase.from('users').upsert({ id: user.id, ctf_points: user.ctfPoints }, { onConflict: 'id' });
+    if (error) errs.push(`ctf:${error.message}`);
+  } catch (e:any) { errs.push(`ctf_batch:${e?.message||'err'}`); }
+  return { ok: errs.length === 0, errors: errs };
+};
+
 // --- Supabase Auth Migration Helpers (skeleton) ---
 export const migrateLocalUserToSupabase = async (): Promise<void> => {
   const user = getStoredUser();
@@ -576,6 +659,8 @@ export const hydrateProgressFromSupabase = async (): Promise<void> => {
   try {
     const { data: enroll } = await supabase.from('enrollments').select('*').eq('user_id', user.id);
     const { data: mods } = await supabase.from('module_progress').select('*').eq('user_id', user.id);
+    const { data: certs } = await supabase.from('certificates').select('id,hash,title,type,issued').eq('user_id', user.id);
+    const { data: userRow } = await supabase.from('users').select('ctf_points').eq('id', user.id).maybeSingle?.() || {} as any;
     if (enroll) {
       enroll.forEach(e => {
         if (!user.enrolledCourses.includes(e.course_id)) user.enrolledCourses.push(e.course_id);
@@ -594,5 +679,39 @@ export const hydrateProgressFromSupabase = async (): Promise<void> => {
       localStorage.setItem(MODULE_PROGRESS_KEY, JSON.stringify(local));
       try { window.dispatchEvent(new Event('modules:changed')); } catch {}
     }
+    if (certs) {
+      certs.forEach(c => {
+        if (!user.certificates.includes(c.id)) user.certificates.push(c.id);
+      });
+      storeUser(user);
+    }
+    if (userRow && typeof userRow.ctf_points === 'number') {
+      if ((user.ctfPoints || 0) < userRow.ctf_points) {
+        user.ctfPoints = userRow.ctf_points;
+        storeUser(user);
+      }
+    }
   } catch {}
+};
+
+// --- Notification Preferences ---
+export interface NotificationPrefs {
+  marketing?: boolean;
+  course_started?: boolean;
+  course_completed?: boolean;
+  digest?: boolean;
+}
+
+export const updateNotificationPrefs = async (prefs: NotificationPrefs): Promise<{ ok: boolean; error?: string }> => {
+  const user = getStoredUser();
+  if (!user) return { ok: false, error: 'no_user' };
+  try {
+    const record = { user_id: user.id, ...prefs } as any;
+    const { error } = await supabase.from('user_notification_prefs').upsert(record, { onConflict: 'user_id' });
+    if (error) return { ok: false, error: error.message };
+    toastSuccess('Preferences saved');
+    return { ok: true };
+  } catch (e:any) {
+    return { ok: false, error: e?.message || 'update_failed' };
+  }
 };

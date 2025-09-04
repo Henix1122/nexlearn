@@ -17,8 +17,10 @@ function cors(res: Response) {
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return cors(new Response('ok'));
   try {
-    const { idOrHash } = await req.json();
-    if (!idOrHash) return cors(new Response(JSON.stringify({ error: 'idOrHash required' }), { status: 400 }));
+  let body: any = {};
+  try { body = await req.json(); } catch { return cors(new Response(JSON.stringify({ error: 'invalid_json' }), { status: 400 })); }
+  const idOrHash = (body.idOrHash || '').toString().trim();
+  if (!idOrHash || idOrHash.length < 4) return cors(new Response(JSON.stringify({ error: 'idOrHash required' }), { status: 400 }));
 
     // Supabase client inside function
     // Use service role key via env var (automatically injected by Supabase)
@@ -35,7 +37,8 @@ serve(async (req: Request) => {
       data = res2.data;
     }
     if (data && data.length > 0) {
-      return cors(new Response(JSON.stringify({ status: 'valid', record: data[0] }), { status: 200 }));
+      const record = data[0];
+      return cors(new Response(JSON.stringify({ status: 'valid', record }), { status: 200 }));
     }
     return cors(new Response(JSON.stringify({ status: 'not_found' }), { status: 404 }));
   } catch (e: any) {

@@ -1,0 +1,28 @@
+<svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- NexLearn Shield Logo (original design) -->
+  <defs>
+    <linearGradient id="grad-edge" x1="0" y1="0" x2="140" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8C00"/>
+      <stop offset="0.35" stop-color="#FF9A1A"/>
+      <stop offset="0.7" stop-color="#FFB133"/>
+      <stop offset="1" stop-color="#FFD950"/>
+    </linearGradient>
+    <linearGradient id="grad-inner" x1="30" y1="20" x2="110" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#E6EEF3" stop-opacity="0.9"/>
+    </linearGradient>
+    <clipPath id="clip-shield">
+      <path d="M70 10L118 28V70C118 100 101 118 70 130C39 118 22 100 22 70V28L70 10Z" />
+    </clipPath>
+  </defs>
+  <!-- Outer shield stroke -->
+  <path d="M70 10L118 28V70C118 100 101 118 70 130C39 118 22 100 22 70V28L70 10Z" stroke="url(#grad-edge)" stroke-width="6" fill="none" stroke-linejoin="round" />
+  <!-- Inner subtle fill -->
+  <g clip-path="url(#clip-shield)">
+    <path d="M70 10L118 28V70C118 100 101 118 70 130C39 118 22 100 22 70V28L70 10Z" fill="url(#grad-inner)"/>
+  </g>
+  <!-- Stylized N (three bars) -->
+  <path d="M50 45V95" stroke="#1A242E" stroke-width="10" stroke-linecap="round" />
+  <path d="M90 45V95" stroke="#1A242E" stroke-width="10" stroke-linecap="round" />
+  <path d="M50 45L90 95" stroke="#FF8C00" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
