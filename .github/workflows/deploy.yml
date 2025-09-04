@@ -35,21 +35,12 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Determine BASE_PATH
-        id: base
-        run: |
-          REPO=${GITHUB_REPOSITORY##*/}
-          if [[ "$REPO" == *.github.io ]]; then
-            echo "value=/" >> $GITHUB_OUTPUT
-          else
-            echo "value=/$REPO/" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build
+      - name: Build (custom domain root)
         env:
-          BASE_PATH: ${{ steps.base.outputs.value }}
+          CUSTOM_DOMAIN: 'true'
+          BASE_PATH: '/'
         run: |
-          echo "Using BASE_PATH=$BASE_PATH"
+          echo "Forcing base '/' for custom domain"
           pnpm build
 
       - name: Upload artifact
