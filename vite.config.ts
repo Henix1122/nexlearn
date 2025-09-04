@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
   if (!explicit && inferred === '/' && process.env.npm_package_name === 'shadcnui') {
     inferred = '/nexlearn/';
   }
+  // Custom domain override: always use root path so asset URLs are absolute from domain origin
+  if (process.env.CUSTOM_DOMAIN === 'true') {
+    inferred = '/';
+  }
   const base = explicit || inferred;
   return ({
   plugins: [
